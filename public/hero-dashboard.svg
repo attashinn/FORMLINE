@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1904 940" role="img" aria-labelledby="title desc">
+  <title id="title">Formline clients dashboard</title>
+  <desc id="desc">A dark SaaS client dashboard with active partnership metrics, filters, and a client table.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#0f0f12"/>
+      <stop offset="0.42" stop-color="#09090b"/>
+      <stop offset="1" stop-color="#111015"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="10%" r="65%">
+      <stop offset="0" stop-color="#7c5cff" stop-opacity=".22"/>
+      <stop offset=".55" stop-color="#7c5cff" stop-opacity=".04"/>
+      <stop offset="1" stop-color="#7c5cff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="140%">
+      <feDropShadow dx="0" dy="28" stdDeviation="28" flood-color="#000000" flood-opacity=".45"/>
+    </filter>
+  </defs>
+
+  <rect width="1904" height="940" fill="url(#bg)"/>
+  <rect width="1904" height="940" fill="url(#glow)"/>
+
+  <g transform="translate(352 0)">
+    <rect width="1200" height="60" fill="#101014" opacity=".92"/>
+    <line x1="0" y1="60" x2="1200" y2="60" stroke="#24242b"/>
+    <rect x="0" y="13" width="31" height="31" rx="10" fill="#ffffff"/>
+    <text x="15.5" y="34" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#0a0a0b">F</text>
+    <text x="43" y="33" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#f6f6f7">Formline</text>
+    <text x="473" y="32" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#ffffff">Clients</text>
+    <text x="555" y="32" font-family="Inter, Arial, sans-serif" font-size="15" fill="#898994">Forms</text>
+    <text x="642" y="32" font-family="Inter, Arial, sans-serif" font-size="15" fill="#898994">Intake</text>
+    <rect x="1045" y="8" width="104" height="41" rx="14" fill="#ffffff"/>
+    <text x="1097" y="33" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="15" fill="#111015">New form</text>
+    <path d="M1177 22h9m-4-4 4 4-4 4" fill="none" stroke="#8f9098" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <g transform="translate(352 140)">
+    <text x="0" y="10" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" letter-spacing="4" fill="#7c5cff">THE WORKSPACE</text>
+    <text x="0" y="64" font-family="Georgia, 'Times New Roman', serif" font-size="62" fill="#f6f6f7">Active</text>
+    <text x="145" y="64" font-family="Georgia, 'Times New Roman', serif" font-size="62" font-style="italic" fill="#a7a7ad">partnerships</text>
+    <text x="0" y="104" font-family="Inter, Arial, sans-serif" font-size="19" fill="#b8bfd2">Oversee client onboarding, project requirements, and communication cycles</text>
+    <text x="0" y="130" font-family="Inter, Arial, sans-serif" font-size="19" fill="#b8bfd2">from a single, quiet interface made for studios that care about the details.</text>
+
+    <g transform="translate(942 112)">
+      <rect x="0" y="0" width="134" height="43" rx="14" fill="#171719" stroke="#2b2b31"/>
+      <path d="M22 12v14m0 0 6-6m-6 6-6-6m-5 11h22" fill="none" stroke="#f5f5f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="47" y="27" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#ffffff">Export CSV</text>
+      <rect x="148" y="0" width="114" height="43" rx="14" fill="#ffffff"/>
+      <text x="205" y="27" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="15" fill="#111015">New Client</text>
+    </g>
+
+    <g filter="url(#shadow)">
+      <rect x="0" y="204" width="1200" height="112" rx="24" fill="#18181b" stroke="#2b2b31"/>
+      <line x1="400" y1="204" x2="400" y2="316" stroke="#303037"/>
+      <line x1="800" y1="204" x2="800" y2="316" stroke="#303037"/>
+      <text x="27" y="240" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="3" fill="#aeb6cf">TOTAL CLIENTS</text>
+      <text x="27" y="286" font-family="Georgia, 'Times New Roman', serif" font-size="38" fill="#ffffff">3</text>
+      <text x="427" y="240" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="3" fill="#aeb6cf">OPEN ENGAGEMENTS</text>
+      <text x="427" y="286" font-family="Georgia, 'Times New Roman', serif" font-size="38" fill="#ffffff">2</text>
+      <text x="827" y="240" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="3" fill="#aeb6cf">NEW THIS PERIOD</text>
+      <text x="827" y="286" font-family="Georgia, 'Times New Roman', serif" font-size="38" fill="#ffffff">1</text>
+    </g>
+
+    <g transform="translate(0 360)">
+      <rect x="0" y="0" width="424" height="46" rx="14" fill="#18181b" stroke="#2b2b31"/>
+      <circle cx="22" cy="23" r="6" fill="none" stroke="#a6a8b2" stroke-width="2"/>
+      <path d="m27 28 6 6" stroke="#a6a8b2" stroke-width="2" stroke-linecap="round"/>
+      <text x="42" y="29" font-family="Inter, Arial, sans-serif" font-size="16" fill="#aeb6cf">Search clients, companies, emails...</text>
+      <rect x="432" y="0" width="184" height="46" rx="14" fill="#18181b" stroke="#2b2b31"/>
+      <text x="450" y="29" font-family="Inter, Arial, sans-serif" font-size="15" fill="#ffffff">All industries</text>
+      <path d="m598 19 6 6 6-6" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+      <rect x="624" y="0" width="132" height="46" rx="14" fill="#18181b" stroke="#2b2b31"/>
+      <text x="642" y="29" font-family="Inter, Arial, sans-serif" font-size="15" fill="#ffffff">All statuses</text>
+      <path d="m738 19 6 6 6-6" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+      <rect x="1030" y="0" width="170" height="46" rx="14" fill="#18181b" stroke="#2b2b31"/>
+      <rect x="1036" y="5" width="78" height="36" rx="12" fill="#ffffff"/>
+      <text x="1075" y="28" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14" fill="#111015">Table</text>
+      <text x="1138" y="28" font-family="Inter, Arial, sans-serif" font-size="14" fill="#9a9aa3">Cards</text>
+    </g>
+
+    <g transform="translate(0 430)" filter="url(#shadow)">
+      <rect x="0" y="0" width="1200" height="274" rx="24" fill="#18181b" stroke="#2b2b31"/>
+      <line x1="0" y1="45" x2="1200" y2="45" stroke="#34343a"/>
+      <line x1="0" y1="122" x2="1200" y2="122" stroke="#2e2e34"/>
+      <line x1="0" y1="198" x2="1200" y2="198" stroke="#2e2e34"/>
+      <text x="27" y="28" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="3" fill="#aeb6cf">PARTNER</text>
+      <text x="327" y="28" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="3" fill="#aeb6cf">INDUSTRY</text>
+      <text x="554" y="28" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="3" fill="#aeb6cf">STATUS</text>
+      <text x="730" y="28" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="3" fill="#aeb6cf">BUDGET</text>
+      <text x="948" y="28" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="3" fill="#aeb6cf">UPDATED</text>
+
+      <g transform="translate(27 66)">
+        <circle cx="20" cy="20" r="20" fill="#15161a" stroke="#34343a"/>
+        <text x="20" y="26" text-anchor="middle" font-family="Georgia, serif" font-size="16" fill="#ffffff">A</text>
+        <text x="54" y="15" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Aether Architecture</text>
+        <text x="54" y="36" font-family="Inter, Arial, sans-serif" font-size="13" fill="#aeb6cf">Julian Vane</text>
+        <text x="300" y="25" font-family="Inter, Arial, sans-serif" font-size="15" fill="#aeb6cf">Urban Design</text>
+        <rect x="527" y="8" width="96" height="22" rx="11" fill="#3a3a40"/>
+        <text x="575" y="23" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#ffffff">IN PROGRESS</text>
+        <text x="703" y="25" font-family="Inter, Arial, sans-serif" font-size="15" fill="#aeb6cf">$12,000 - $15,000</text>
+        <text x="921" y="25" font-family="Inter, Arial, sans-serif" font-size="15" fill="#aeb6cf">12h ago</text>
+        <text x="1088" y="25" font-family="Inter, Arial, sans-serif" font-size="15" fill="#aeb6cf">Open</text>
+      </g>
+
+      <g transform="translate(27 143)">
+        <circle cx="20" cy="20" r="20" fill="#f4ead8"/>
+        <text x="20" y="26" text-anchor="middle" font-family="Georgia, serif" font-size="16" fill="#111015">L</text>
+        <text x="54" y="15" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Lumina Skincare</text>
+        <text x="54" y="36" font-family="Inter, Arial, sans-serif" font-size="13" fill="#aeb6cf">Sasha Reyes</text>
+        <text x="300" y="25" font-family="Inter, Arial, sans-serif" font-size="15" fill="#aeb6cf">E-commerce</text>
+        <rect x="527" y="8" width="90" height="22" rx="11" fill="#063f34"/>
+        <text x="572" y="23" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#44efbc">COMPLETED</text>
+        <text x="703" y="25" font-family="Inter, Arial, sans-serif" font-size="15" fill="#aeb6cf">$7,000 - $9,000</text>
+        <text x="921" y="25" font-family="Inter, Arial, sans-serif" font-size="15" fill="#aeb6cf">2d ago</text>
+        <text x="1088" y="25" font-family="Inter, Arial, sans-serif" font-size="15" fill="#aeb6cf">Open</text>
+      </g>
+
+      <g transform="translate(27 220)">
+        <circle cx="20" cy="20" r="20" fill="#26342c"/>
+        <text x="20" y="26" text-anchor="middle" font-family="Georgia, serif" font-size="16" fill="#b46b47">N</text>
+        <text x="54" y="15" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">Northwood Studio</text>
+        <text x="54" y="36" font-family="Inter, Arial, sans-serif" font-size="13" fill="#aeb6cf">Mara Cole</text>
+        <text x="300" y="25" font-family="Inter, Arial, sans-serif" font-size="15" fill="#aeb6cf">Hospitality &amp; Travel</text>
+        <rect x="527" y="8" width="47" height="22" rx="11" fill="#4b390b"/>
+        <text x="550" y="23" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#ffd44a">NEW</text>
+        <text x="703" y="25" font-family="Inter, Arial, sans-serif" font-size="15" fill="#aeb6cf">$18,000 - $22,000</text>
+        <text x="921" y="25" font-family="Inter, Arial, sans-serif" font-size="15" fill="#aeb6cf">1d ago</text>
+        <text x="1088" y="25" font-family="Inter, Arial, sans-serif" font-size="15" fill="#aeb6cf">Open</text>
+      </g>
+    </g>
+  </g>
+</svg>
