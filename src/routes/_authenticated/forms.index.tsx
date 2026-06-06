@@ -26,8 +26,11 @@ function FormsPage() {
   const [creating, setCreating] = useState(false);
 
   const createMut = useMutation({
-    mutationFn: async (payload: { title: string; description?: string; fields: FormTemplate["fields"] }) =>
-      create({ data: payload }),
+    mutationFn: async (payload: {
+      title: string;
+      description?: string;
+      fields: FormTemplate["fields"];
+    }) => create({ data: payload }),
     onSuccess: (form) => {
       toast.success("Form created");
       qc.invalidateQueries({ queryKey: ["forms"] });
@@ -87,7 +90,9 @@ function FormsPage() {
             transition={{ duration: 0.3 }}
             className="mb-8 rounded-2xl bg-surface p-5 ring-1 ring-hairline"
           >
-            <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Form title</label>
+            <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Form title
+            </label>
             <div className="mt-2 flex gap-2">
               <input
                 autoFocus
@@ -104,7 +109,10 @@ function FormsPage() {
                 Create
               </button>
               <button
-                onClick={() => { setCreating(false); setTitle(""); }}
+                onClick={() => {
+                  setCreating(false);
+                  setTitle("");
+                }}
                 className="inline-flex h-10 items-center rounded-lg bg-surface px-4 text-sm ring-1 ring-hairline"
               >
                 Cancel
@@ -157,7 +165,9 @@ function FormsPage() {
         </div>
 
         {isLoading ? (
-          <div className="rounded-2xl bg-surface p-12 text-center text-muted-foreground ring-1 ring-hairline">Loading…</div>
+          <div className="rounded-2xl bg-surface p-12 text-center text-muted-foreground ring-1 ring-hairline">
+            Loading…
+          </div>
         ) : forms.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
@@ -167,7 +177,9 @@ function FormsPage() {
           >
             <FileText className="mx-auto size-8 text-muted-foreground" />
             <p className="mt-4 font-serif text-2xl">No forms yet</p>
-            <p className="mt-1 text-sm text-muted-foreground">Pick a template above or create a blank form.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Pick a template above or create a blank form.
+            </p>
           </motion.div>
         ) : (
           <ul className="divide-y divide-hairline overflow-hidden rounded-2xl bg-surface ring-1 ring-hairline">
@@ -188,7 +200,8 @@ function FormsPage() {
                 <div className="pointer-events-none relative z-10 flex-1">
                   <div className="font-medium">{f.title}</div>
                   <div className="text-xs text-muted-foreground">
-                    {f.fields.length} fields · {f.is_published ? "Published" : "Draft"} · Updated {new Date(f.updated_at).toLocaleDateString()}
+                    {f.fields.length} fields · {f.is_published ? "Published" : "Draft"} · Updated{" "}
+                    {new Date(f.updated_at).toLocaleDateString()}
                   </div>
                 </div>
                 <div className="relative z-10 flex items-center gap-2">

@@ -1,4 +1,12 @@
-export type FieldType = "text" | "email" | "textarea" | "select" | "checkbox" | "date" | "number" | "tel";
+export type FieldType =
+  | "text"
+  | "email"
+  | "textarea"
+  | "select"
+  | "checkbox"
+  | "date"
+  | "number"
+  | "tel";
 
 export type FormField = {
   id: string;

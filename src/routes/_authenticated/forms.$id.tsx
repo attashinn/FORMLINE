@@ -38,7 +38,16 @@ export const Route = createFileRoute("/_authenticated/forms/$id")({
   component: FormDetail,
 });
 
-const FIELD_TYPES: FieldType[] = ["text", "email", "textarea", "select", "checkbox", "date", "number", "tel"];
+const FIELD_TYPES: FieldType[] = [
+  "text",
+  "email",
+  "textarea",
+  "select",
+  "checkbox",
+  "date",
+  "number",
+  "tel",
+];
 
 const FIELD_TYPE_LABELS: Record<FieldType, string> = {
   text: "Short text",
@@ -73,7 +82,10 @@ function FormDetail() {
   const upd = useServerFn(updateForm);
   const delSub = useServerFn(deleteSubmission);
 
-  const { data, isLoading } = useQuery({ queryKey: ["form", id], queryFn: () => get({ data: { id } }) });
+  const { data, isLoading } = useQuery({
+    queryKey: ["form", id],
+    queryFn: () => get({ data: { id } }),
+  });
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -93,7 +105,9 @@ function FormDetail() {
 
   const saveMut = useMutation({
     mutationFn: async () =>
-      upd({ data: { id, title, description: description || undefined, fields, is_published: published } }),
+      upd({
+        data: { id, title, description: description || undefined, fields, is_published: published },
+      }),
     onSuccess: () => {
       toast.success("Saved");
       qc.invalidateQueries({ queryKey: ["form", id] });
@@ -116,7 +130,8 @@ function FormDetail() {
   }
 
   const configuredOrigin = import.meta.env.VITE_PUBLIC_APP_URL?.replace(/\/$/, "");
-  const shareOrigin = configuredOrigin || (typeof window !== "undefined" ? window.location.origin : "");
+  const shareOrigin =
+    configuredOrigin || (typeof window !== "undefined" ? window.location.origin : "");
   const shareUrl = shareOrigin ? `${shareOrigin}/f/${data.form.share_token}` : "";
 
   function update(idx: number, patch: Partial<FormField>) {
@@ -176,7 +191,10 @@ function FormDetail() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
       <main className="mx-auto max-w-4xl px-6 py-10">
-        <Link to="/forms" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          to="/forms"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="size-4" /> All forms
         </Link>
 
@@ -188,7 +206,11 @@ function FormDetail() {
           />
           <div className="flex items-center gap-2">
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={published}
+                onChange={(e) => setPublished(e.target.checked)}
+              />
               Published
             </label>
             <button
@@ -204,7 +226,9 @@ function FormDetail() {
         {/* Share strip */}
         <div className="mt-5 flex flex-col gap-3 rounded-2xl bg-surface p-4 ring-1 ring-hairline md:flex-row md:items-center md:justify-between">
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Share link</div>
+            <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Share link
+            </div>
             <div className="mt-1 truncate font-mono text-sm">{shareUrl}</div>
           </div>
           <div className="flex gap-2">
@@ -229,9 +253,13 @@ function FormDetail() {
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={"h-8 rounded-md px-3 text-sm font-medium capitalize " + (tab === t ? "bg-foreground text-background" : "text-muted-foreground")}
+              className={
+                "h-8 rounded-md px-3 text-sm font-medium capitalize " +
+                (tab === t ? "bg-foreground text-background" : "text-muted-foreground")
+              }
             >
-              {t}{t === "responses" && ` (${data.submissions.length})`}
+              {t}
+              {t === "responses" && ` (${data.submissions.length})`}
             </button>
           ))}
         </div>
@@ -297,7 +325,10 @@ function FormDetail() {
                       placeholder="Field label"
                       className="h-11 rounded-xl bg-surface-muted px-3.5 text-sm ring-1 ring-hairline transition-shadow focus:outline-none focus:ring-2 focus:ring-foreground/20"
                     />
-                    <Select value={f.type} onValueChange={(t) => update(i, { type: t as FieldType })}>
+                    <Select
+                      value={f.type}
+                      onValueChange={(t) => update(i, { type: t as FieldType })}
+                    >
                       <SelectTrigger className="h-11 w-full rounded-xl border-0 bg-surface-muted px-3 text-left text-sm shadow-none ring-1 ring-hairline transition-all hover:bg-secondary hover:ring-foreground/20 focus:ring-2 focus:ring-foreground/20">
                         <SelectValue>
                           <span className="flex min-w-0 items-center gap-2">
@@ -327,8 +358,12 @@ function FormDetail() {
                                   <Icon className="size-4" />
                                 </span>
                                 <span className="min-w-0 flex-1 text-left">
-                                  <span className="block text-sm font-medium text-foreground">{FIELD_TYPE_LABELS[t]}</span>
-                                  <span className="block truncate text-xs text-muted-foreground">{FIELD_TYPE_META[t].description}</span>
+                                  <span className="block text-sm font-medium text-foreground">
+                                    {FIELD_TYPE_LABELS[t]}
+                                  </span>
+                                  <span className="block truncate text-xs text-muted-foreground">
+                                    {FIELD_TYPE_META[t].description}
+                                  </span>
                                 </span>
                               </span>
                             </SelectItem>
@@ -337,13 +372,25 @@ function FormDetail() {
                       </SelectContent>
                     </Select>
                     <label className="flex h-11 items-center gap-2 rounded-xl bg-surface-muted px-3 text-xs font-medium ring-1 ring-hairline">
-                      <input className="accent-foreground" type="checkbox" checked={!!f.required} onChange={(e) => update(i, { required: e.target.checked })} />
+                      <input
+                        className="accent-foreground"
+                        type="checkbox"
+                        checked={!!f.required}
+                        onChange={(e) => update(i, { required: e.target.checked })}
+                      />
                       Required
                     </label>
                     {f.type === "select" && (
                       <input
                         value={(f.options ?? []).join(", ")}
-                        onChange={(e) => update(i, { options: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
+                        onChange={(e) =>
+                          update(i, {
+                            options: e.target.value
+                              .split(",")
+                              .map((s) => s.trim())
+                              .filter(Boolean),
+                          })
+                        }
                         placeholder="Options, comma separated"
                         className="h-11 rounded-xl bg-surface-muted px-3.5 text-sm ring-1 ring-hairline md:col-span-3"
                       />
@@ -361,7 +408,12 @@ function FormDetail() {
             ))}
 
             <button
-              onClick={() => setFields((fs) => [...fs, { id: rid(), type: "text", label: "New field", required: false }])}
+              onClick={() =>
+                setFields((fs) => [
+                  ...fs,
+                  { id: rid(), type: "text", label: "New field", required: false },
+                ])
+              }
               className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-hairline text-sm text-muted-foreground hover:text-foreground"
             >
               <Plus className="size-4" /> Add field
@@ -372,7 +424,9 @@ function FormDetail() {
             {data.submissions.length === 0 ? (
               <div className="rounded-2xl bg-surface p-16 text-center ring-1 ring-hairline">
                 <p className="font-serif text-2xl">No responses yet</p>
-                <p className="mt-2 text-sm text-muted-foreground">Share your link to start collecting.</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Share your link to start collecting.
+                </p>
               </div>
             ) : (
               <ul className="space-y-3">
@@ -380,7 +434,8 @@ function FormDetail() {
                   <li key={s.id} className="rounded-2xl bg-surface p-5 ring-1 ring-hairline">
                     <div className="mb-3 flex items-center justify-between">
                       <div className="text-xs text-muted-foreground">
-                        {new Date(s.submitted_at).toLocaleString()} {s.submitter_email && `· ${s.submitter_email}`}
+                        {new Date(s.submitted_at).toLocaleString()}{" "}
+                        {s.submitter_email && `· ${s.submitter_email}`}
                       </div>
                       <button
                         onClick={() => delSubMut.mutate(s.id)}

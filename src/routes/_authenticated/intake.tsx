@@ -9,9 +9,17 @@ export const Route = createFileRoute("/_authenticated/intake")({
   head: () => ({
     meta: [
       { title: "Client Intake — Client Profile Hub" },
-      { name: "description", content: "A calm, multi-step intake form to capture every detail of a new client engagement." },
+      {
+        name: "description",
+        content:
+          "A calm, multi-step intake form to capture every detail of a new client engagement.",
+      },
       { property: "og:title", content: "Client Intake — Client Profile Hub" },
-      { property: "og:description", content: "A calm, multi-step intake form to capture every detail of a new client engagement." },
+      {
+        property: "og:description",
+        content:
+          "A calm, multi-step intake form to capture every detail of a new client engagement.",
+      },
     ],
   }),
   component: Intake,
@@ -75,7 +83,15 @@ const INDUSTRIES = [
   "Other",
 ];
 
-const SERVICES = ["Brand identity", "Website design", "E-commerce", "Content strategy", "Photography direction", "App design", "SEO"];
+const SERVICES = [
+  "Brand identity",
+  "Website design",
+  "E-commerce",
+  "Content strategy",
+  "Photography direction",
+  "App design",
+  "SEO",
+];
 
 const DRAFT_KEY = "cph.intake.draft.v1";
 
@@ -100,7 +116,9 @@ function Intake() {
     try {
       const raw = localStorage.getItem(DRAFT_KEY);
       if (raw) setDraft({ ...empty, ...(JSON.parse(raw) as Partial<Draft>) });
-    } catch {}
+    } catch {
+      // ignore corrupt or unavailable storage
+    }
   }, []);
 
   // Autosave
@@ -109,7 +127,9 @@ function Intake() {
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
         setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
-      } catch {}
+      } catch {
+        // ignore quota or unavailable storage
+      }
     }, 400);
     return () => clearTimeout(t);
   }, [draft]);
@@ -183,7 +203,8 @@ function Intake() {
             Client <span className="italic text-muted-foreground">intake</span>
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-pretty text-muted-foreground">
-            Tell us about the project. We'll save your progress as you go, so you can step away any time.
+            Tell us about the project. We'll save your progress as you go, so you can step away any
+            time.
           </p>
         </header>
 
@@ -213,7 +234,8 @@ function Intake() {
         <div className="rounded-3xl bg-surface p-8 ring-1 ring-hairline lg:p-10">
           <div className="mb-8 flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Step {String(step + 1).padStart(2, "0")} of {String(STEPS.length).padStart(2, "0")} · {STEPS[step].label}
+              Step {String(step + 1).padStart(2, "0")} of {String(STEPS.length).padStart(2, "0")} ·{" "}
+              {STEPS[step].label}
             </span>
             <span className="text-xs text-muted-foreground">
               {savedAt ? `Draft saved · ${savedAt}` : "Autosaving…"}
@@ -224,16 +246,37 @@ function Intake() {
           {step === 0 && (
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <Field label="Full name" error={errors.fullName}>
-                <input className={inputCls} value={draft.fullName} onChange={(e) => set("fullName", e.target.value)} placeholder="Jane Doe" />
+                <input
+                  className={inputCls}
+                  value={draft.fullName}
+                  onChange={(e) => set("fullName", e.target.value)}
+                  placeholder="Jane Doe"
+                />
               </Field>
               <Field label="Email" error={errors.email}>
-                <input type="email" className={inputCls} value={draft.email} onChange={(e) => set("email", e.target.value)} placeholder="jane@studio.com" />
+                <input
+                  type="email"
+                  className={inputCls}
+                  value={draft.email}
+                  onChange={(e) => set("email", e.target.value)}
+                  placeholder="jane@studio.com"
+                />
               </Field>
               <Field label="Phone">
-                <input className={inputCls} value={draft.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+1 555 0100" />
+                <input
+                  className={inputCls}
+                  value={draft.phone}
+                  onChange={(e) => set("phone", e.target.value)}
+                  placeholder="+1 555 0100"
+                />
               </Field>
               <Field label="Company" error={errors.company}>
-                <input className={inputCls} value={draft.company} onChange={(e) => set("company", e.target.value)} placeholder="Studio Northwood" />
+                <input
+                  className={inputCls}
+                  value={draft.company}
+                  onChange={(e) => set("company", e.target.value)}
+                  placeholder="Studio Northwood"
+                />
               </Field>
             </div>
           )}
@@ -241,19 +284,39 @@ function Intake() {
           {step === 1 && (
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <Field label="Industry" error={errors.industry}>
-                <select className={inputCls} value={draft.industry} onChange={(e) => set("industry", e.target.value)}>
+                <select
+                  className={inputCls}
+                  value={draft.industry}
+                  onChange={(e) => set("industry", e.target.value)}
+                >
                   <option value="">Select an industry…</option>
-                  {INDUSTRIES.map((i) => <option key={i}>{i}</option>)}
+                  {INDUSTRIES.map((i) => (
+                    <option key={i}>{i}</option>
+                  ))}
                 </select>
               </Field>
               <Field label="Website">
-                <input className={inputCls} value={draft.website} onChange={(e) => set("website", e.target.value)} placeholder="studio.com" />
+                <input
+                  className={inputCls}
+                  value={draft.website}
+                  onChange={(e) => set("website", e.target.value)}
+                  placeholder="studio.com"
+                />
               </Field>
               <Field label="Location">
-                <input className={inputCls} value={draft.location} onChange={(e) => set("location", e.target.value)} placeholder="Brooklyn, NY" />
+                <input
+                  className={inputCls}
+                  value={draft.location}
+                  onChange={(e) => set("location", e.target.value)}
+                  placeholder="Brooklyn, NY"
+                />
               </Field>
               <Field label="Company size">
-                <select className={inputCls} value={draft.companySize} onChange={(e) => set("companySize", e.target.value)}>
+                <select
+                  className={inputCls}
+                  value={draft.companySize}
+                  onChange={(e) => set("companySize", e.target.value)}
+                >
                   <option value="">Select…</option>
                   <option>Solo</option>
                   <option>2–10</option>
@@ -289,7 +352,12 @@ function Intake() {
                       {draft.brandColors.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => set("brandColors", draft.brandColors.filter((_, j) => j !== i))}
+                          onClick={() =>
+                            set(
+                              "brandColors",
+                              draft.brandColors.filter((_, j) => j !== i),
+                            )
+                          }
                           className="text-muted-foreground hover:text-foreground"
                         >
                           <X className="size-3.5" />
@@ -334,10 +402,18 @@ function Intake() {
                 {draft.files.length > 0 && (
                   <ul className="mt-3 space-y-2">
                     {draft.files.map((f) => (
-                      <li key={f.id} className="flex items-center justify-between rounded-lg bg-surface-muted px-3 py-2 text-xs ring-1 ring-hairline">
+                      <li
+                        key={f.id}
+                        className="flex items-center justify-between rounded-lg bg-surface-muted px-3 py-2 text-xs ring-1 ring-hairline"
+                      >
                         <span className="truncate">{f.name}</span>
                         <button
-                          onClick={() => set("files", draft.files.filter((x) => x.id !== f.id))}
+                          onClick={() =>
+                            set(
+                              "files",
+                              draft.files.filter((x) => x.id !== f.id),
+                            )
+                          }
                           className="ml-3 text-muted-foreground hover:text-foreground"
                         >
                           <X className="size-3.5" />
@@ -362,10 +438,20 @@ function Intake() {
               </Field>
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <Field label="Budget">
-                  <input className={inputCls} value={draft.budget} onChange={(e) => set("budget", e.target.value)} placeholder="$10,000 – $15,000" />
+                  <input
+                    className={inputCls}
+                    value={draft.budget}
+                    onChange={(e) => set("budget", e.target.value)}
+                    placeholder="$10,000 – $15,000"
+                  />
                 </Field>
                 <Field label="Deadline">
-                  <input type="date" className={inputCls} value={draft.deadline} onChange={(e) => set("deadline", e.target.value)} />
+                  <input
+                    type="date"
+                    className={inputCls}
+                    value={draft.deadline}
+                    onChange={(e) => set("deadline", e.target.value)}
+                  />
                 </Field>
               </div>
               <Field label="Services needed">
@@ -406,7 +492,9 @@ function Intake() {
 
               <div className="rounded-2xl bg-surface-muted p-5 ring-1 ring-hairline">
                 <h3 className="font-serif text-2xl">Review</h3>
-                <p className="mt-1 text-sm text-muted-foreground">A quick glance before you submit.</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  A quick glance before you submit.
+                </p>
                 <dl className="mt-4 grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
                   {[
                     ["Contact", `${draft.fullName || "—"} · ${draft.email || "—"}`],
@@ -418,7 +506,10 @@ function Intake() {
                     ["Services", draft.services.join(", ") || "—"],
                     ["Files", `${draft.files.length} attached`],
                   ].map(([k, v]) => (
-                    <div key={k} className="flex justify-between gap-4 border-b border-hairline pb-2">
+                    <div
+                      key={k}
+                      className="flex justify-between gap-4 border-b border-hairline pb-2"
+                    >
                       <dt className="text-muted-foreground">{k}</dt>
                       <dd className="text-right font-medium">{v}</dd>
                     </div>
@@ -466,10 +557,20 @@ function Intake() {
 const inputCls =
   "h-10 w-full rounded-lg bg-surface-muted px-3 text-sm text-foreground ring-1 ring-hairline outline-none transition-shadow placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-foreground/80";
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-2">
-      <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{label}</label>
+      <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        {label}
+      </label>
       {children}
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>

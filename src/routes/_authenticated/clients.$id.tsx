@@ -9,9 +9,15 @@ export const Route = createFileRoute("/_authenticated/clients/$id")({
   head: ({ params }) => ({
     meta: [
       { title: `Client · ${params.id} — Client Profile Hub` },
-      { name: "description", content: "Full client profile with project requirements, files, notes and activity." },
+      {
+        name: "description",
+        content: "Full client profile with project requirements, files, notes and activity.",
+      },
       { property: "og:title", content: "Client profile — Client Profile Hub" },
-      { property: "og:description", content: "Full client profile with project requirements, files, notes and activity." },
+      {
+        property: "og:description",
+        content: "Full client profile with project requirements, files, notes and activity.",
+      },
     ],
   }),
   notFoundComponent: () => (
@@ -20,7 +26,10 @@ export const Route = createFileRoute("/_authenticated/clients/$id")({
       <div className="mx-auto max-w-3xl px-6 py-20 text-center">
         <h1 className="font-serif text-4xl">Client not found</h1>
         <p className="mt-2 text-muted-foreground">It may have been removed.</p>
-        <Link to="/dashboard" className="mt-6 inline-flex h-10 items-center rounded-lg bg-foreground px-4 text-sm font-medium text-background">
+        <Link
+          to="/dashboard"
+          className="mt-6 inline-flex h-10 items-center rounded-lg bg-foreground px-4 text-sm font-medium text-background"
+        >
           Back to dashboard
         </Link>
       </div>
@@ -89,7 +98,10 @@ function ClientProfile() {
       <SiteHeader />
 
       <main className="mx-auto max-w-6xl px-6 py-10 lg:px-8 lg:py-14">
-        <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
+        <Link
+          to="/dashboard"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
           <ArrowLeft className="size-3.5" /> All clients
         </Link>
 
@@ -100,7 +112,10 @@ function ClientProfile() {
               className="grid size-20 place-items-center rounded-2xl ring-1 ring-hairline"
               style={{ background: client.brandColors[0] ?? "#e4e4e7" }}
             >
-              <span className="font-serif text-4xl" style={{ color: client.brandColors[2] ?? "#fff" }}>
+              <span
+                className="font-serif text-4xl"
+                style={{ color: client.brandColors[2] ?? "#fff" }}
+              >
                 {client.company.slice(0, 1)}
               </span>
             </div>
@@ -149,7 +164,9 @@ function ClientProfile() {
               onClick={() => setTab(t)}
               className={
                 "-mb-px border-b-2 pb-3 text-xs font-semibold uppercase tracking-[0.18em] transition-colors " +
-                (tab === t ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")
+                (tab === t
+                  ? "border-foreground text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground")
               }
             >
               {t}
@@ -163,7 +180,9 @@ function ClientProfile() {
               <>
                 <div className="space-y-4">
                   <h2 className="font-serif text-3xl leading-tight">Project scope</h2>
-                  <p className="max-w-[58ch] text-pretty text-muted-foreground">{client.goals || "No project goals captured yet."}</p>
+                  <p className="max-w-[58ch] text-pretty text-muted-foreground">
+                    {client.goals || "No project goals captured yet."}
+                  </p>
                 </div>
 
                 {/* AI Insight */}
@@ -176,7 +195,9 @@ function ClientProfile() {
                       <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                         AI client insight
                       </h3>
-                      <p className="mt-2 font-serif text-xl leading-snug italic text-foreground">"{insight}"</p>
+                      <p className="mt-2 font-serif text-xl leading-snug italic text-foreground">
+                        "{insight}"
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -184,12 +205,22 @@ function ClientProfile() {
                 {/* Brand colors */}
                 {client.brandColors.length > 0 && (
                   <div>
-                    <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Brand palette</h3>
+                    <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      Brand palette
+                    </h3>
                     <div className="mt-4 flex flex-wrap gap-3">
                       {client.brandColors.map((c, i) => (
-                        <div key={i} className="flex items-center gap-3 rounded-xl bg-surface px-3 py-2 ring-1 ring-hairline">
-                          <div className="size-8 rounded-lg ring-1 ring-hairline" style={{ background: c }} />
-                          <span className="font-mono text-xs uppercase text-muted-foreground">{c}</span>
+                        <div
+                          key={i}
+                          className="flex items-center gap-3 rounded-xl bg-surface px-3 py-2 ring-1 ring-hairline"
+                        >
+                          <div
+                            className="size-8 rounded-lg ring-1 ring-hairline"
+                            style={{ background: c }}
+                          />
+                          <span className="font-mono text-xs uppercase text-muted-foreground">
+                            {c}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -233,7 +264,9 @@ function ClientProfile() {
                     ["Style references", client.styleReferences || "—"],
                   ].map(([k, v]) => (
                     <div key={k} className="rounded-xl bg-surface p-5 ring-1 ring-hairline">
-                      <dt className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{k}</dt>
+                      <dt className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        {k}
+                      </dt>
                       <dd className="mt-2 text-sm text-pretty">{v}</dd>
                     </div>
                   ))}
@@ -251,10 +284,15 @@ function ClientProfile() {
                 ) : (
                   <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     {client.files.map((f) => (
-                      <li key={f.id} className="flex items-center justify-between rounded-xl bg-surface p-4 ring-1 ring-hairline">
+                      <li
+                        key={f.id}
+                        className="flex items-center justify-between rounded-xl bg-surface p-4 ring-1 ring-hairline"
+                      >
                         <div className="min-w-0">
                           <div className="truncate text-sm font-medium">{f.name}</div>
-                          <div className="text-xs text-muted-foreground">{(f.size / 1024).toFixed(1)} KB · {f.type || "file"}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {(f.size / 1024).toFixed(1)} KB · {f.type || "file"}
+                          </div>
                         </div>
                         {f.dataUrl && (
                           <a
@@ -292,7 +330,9 @@ function ClientProfile() {
           <aside className="lg:col-span-4">
             <div className="sticky top-20 space-y-8">
               <div className="rounded-2xl bg-surface p-6 ring-1 ring-hairline">
-                <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Client details</h3>
+                <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Client details
+                </h3>
                 <dl className="mt-4 space-y-3 text-sm">
                   {[
                     ["Contact", client.fullName],
@@ -304,7 +344,10 @@ function ClientProfile() {
                     ["Budget", client.budget || "—"],
                     ["Deadline", client.deadline || "—"],
                   ].map(([k, v]) => (
-                    <div key={k} className="flex items-start justify-between gap-4 border-b border-hairline pb-2 last:border-0">
+                    <div
+                      key={k}
+                      className="flex items-start justify-between gap-4 border-b border-hairline pb-2 last:border-0"
+                    >
                       <dt className="text-muted-foreground">{k}</dt>
                       <dd className="max-w-[60%] text-right font-medium break-words">{v}</dd>
                     </div>
@@ -313,7 +356,9 @@ function ClientProfile() {
               </div>
 
               <div>
-                <h3 className="px-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Timeline</h3>
+                <h3 className="px-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Timeline
+                </h3>
                 <ol className="mt-4 space-y-5 border-l border-hairline pl-5">
                   {client.activity.slice(0, 4).map((a) => (
                     <li key={a.id} className="relative">

@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 
 export type ClientStatus = "New" | "In Progress" | "Completed";
 
@@ -67,15 +75,31 @@ const seed: ClientRecord[] = [
     budget: "$12,000 – $15,000",
     deadline: "2025-12-12",
     services: ["Brand identity", "Website design", "Content strategy"],
-    notes: "Client prefers muted tones. Avoid high-contrast primary colors. Next meeting scheduled for Friday 2 PM.",
+    notes:
+      "Client prefers muted tones. Avoid high-contrast primary colors. Next meeting scheduled for Friday 2 PM.",
     files: [],
     status: "In Progress",
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 6).toISOString(),
     updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
     activity: [
-      { id: "a1", label: "Intake form submitted", timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 6).toISOString(), kind: "submission" },
-      { id: "a2", label: "Discovery call scheduled", timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), kind: "update" },
-      { id: "a3", label: "Status moved to In Progress", timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), kind: "status" },
+      {
+        id: "a1",
+        label: "Intake form submitted",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 6).toISOString(),
+        kind: "submission",
+      },
+      {
+        id: "a2",
+        label: "Discovery call scheduled",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
+        kind: "update",
+      },
+      {
+        id: "a3",
+        label: "Status moved to In Progress",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
+        kind: "status",
+      },
     ],
   },
   {
@@ -100,8 +124,18 @@ const seed: ClientRecord[] = [
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 40).toISOString(),
     updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
     activity: [
-      { id: "a1", label: "Intake form submitted", timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 40).toISOString(), kind: "submission" },
-      { id: "a2", label: "Project marked Completed", timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), kind: "status" },
+      {
+        id: "a1",
+        label: "Intake form submitted",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 40).toISOString(),
+        kind: "submission",
+      },
+      {
+        id: "a2",
+        label: "Project marked Completed",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
+        kind: "status",
+      },
     ],
   },
   {
@@ -126,7 +160,12 @@ const seed: ClientRecord[] = [
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
     updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
     activity: [
-      { id: "a1", label: "Intake form submitted", timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), kind: "submission" },
+      {
+        id: "a1",
+        label: "Intake form submitted",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+        kind: "submission",
+      },
     ],
   },
 ];
@@ -134,7 +173,11 @@ const seed: ClientRecord[] = [
 type Ctx = {
   clients: ClientRecord[];
   getClient: (id: string) => ClientRecord | undefined;
-  addClient: (c: Omit<ClientRecord, "id" | "createdAt" | "updatedAt" | "activity" | "status"> & { status?: ClientStatus }) => ClientRecord;
+  addClient: (
+    c: Omit<ClientRecord, "id" | "createdAt" | "updatedAt" | "activity" | "status"> & {
+      status?: ClientStatus;
+    },
+  ) => ClientRecord;
   updateClient: (id: string, patch: Partial<ClientRecord>, activityLabel?: string) => void;
   removeClient: (id: string) => void;
 };
@@ -151,13 +194,17 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
         const parsed = JSON.parse(raw) as ClientRecord[];
         if (Array.isArray(parsed)) setClients(parsed);
       }
-    } catch {}
+    } catch {
+      // ignore corrupt or unavailable storage
+    }
   }, []);
 
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
-    } catch {}
+    } catch {
+      // ignore quota or unavailable storage
+    }
   }, [clients]);
 
   const getClient = useCallback((id: string) => clients.find((c) => c.id === id), [clients]);
@@ -170,7 +217,14 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
       status: draft.status ?? "New",
       createdAt: now,
       updatedAt: now,
-      activity: [{ id: `a-${Date.now()}`, label: "Intake form submitted", timestamp: now, kind: "submission" }],
+      activity: [
+        {
+          id: `a-${Date.now()}`,
+          label: "Intake form submitted",
+          timestamp: now,
+          kind: "submission",
+        },
+      ],
     };
     setClients((prev) => [record, ...prev]);
     return record;
@@ -182,7 +236,15 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
         if (c.id !== id) return c;
         const now = new Date().toISOString();
         const activity = activityLabel
-          ? [{ id: `a-${Date.now()}`, label: activityLabel, timestamp: now, kind: "update" as const }, ...c.activity]
+          ? [
+              {
+                id: `a-${Date.now()}`,
+                label: activityLabel,
+                timestamp: now,
+                kind: "update" as const,
+              },
+              ...c.activity,
+            ]
           : c.activity;
         return { ...c, ...patch, updatedAt: now, activity };
       }),
@@ -193,7 +255,10 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
     setClients((prev) => prev.filter((c) => c.id !== id));
   }, []);
 
-  const value = useMemo(() => ({ clients, getClient, addClient, updateClient, removeClient }), [clients, getClient, addClient, updateClient, removeClient]);
+  const value = useMemo(
+    () => ({ clients, getClient, addClient, updateClient, removeClient }),
+    [clients, getClient, addClient, updateClient, removeClient],
+  );
 
   return <ClientsContext.Provider value={value}>{children}</ClientsContext.Provider>;
 }
@@ -213,7 +278,11 @@ export function formatRelative(iso: string) {
   if (h < 24) return `${h}h ago`;
   const d = Math.floor(h / 24);
   if (d < 30) return `${d}d ago`;
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 export function exportClientsCsv(clients: ClientRecord[]) {

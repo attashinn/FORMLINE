@@ -5,8 +5,6 @@ import { sql } from "@/lib/db";
 import crypto from "crypto";
 import type { FormField, FormRecord, SubmissionRecord } from "./forms.types";
 
-type Json = any;
-
 /** Map a Clerk user id to a stable, valid UUID v4 for Postgres. */
 function getDeterministicUuid(str: string): string {
   const hash = crypto.createHash("md5").update(str).digest("hex");
@@ -14,20 +12,18 @@ function getDeterministicUuid(str: string): string {
   return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(12, 15)}-${variant}${hash.slice(16, 19)}-${hash.slice(19, 31)}`;
 }
 
-export const requireClerkAuth = createMiddleware({ type: "function" }).server(
-  async ({ next }) => {
-    const { userId } = await auth();
-    if (!userId) {
-      throw new Error("Unauthorized: Not logged in");
-    }
-    const mappedUuid = getDeterministicUuid(userId);
-    return next({
-      context: {
-        userId: mappedUuid,
-      },
-    });
+export const requireClerkAuth = createMiddleware({ type: "function" }).server(async ({ next }) => {
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("Unauthorized: Not logged in");
   }
-);
+  const mappedUuid = getDeterministicUuid(userId);
+  return next({
+    context: {
+      userId: mappedUuid,
+    },
+  });
+});
 
 const FieldSchema = z.object({
   id: z.string().min(1).max(64),
@@ -94,22 +90,23 @@ export const createForm = createServerFn({ method: "POST" })
 
 export const updateForm = createServerFn({ method: "POST" })
   .middleware([requireClerkAuth])
-  .inputValidator((d: {
-    id: string;
-    title: string;
-    description?: string;
-    fields: FormField[];
-    is_published: boolean;
-  }) =>
-    z
-      .object({
-        id: z.string().uuid(),
-        title: z.string().min(1).max(200),
-        description: z.string().max(1000).optional(),
-        fields: z.array(FieldSchema).max(50),
-        is_published: z.boolean(),
-      })
-      .parse(d),
+  .inputValidator(
+    (d: {
+      id: string;
+      title: string;
+      description?: string;
+      fields: FormField[];
+      is_published: boolean;
+    }) =>
+      z
+        .object({
+          id: z.string().uuid(),
+          title: z.string().min(1).max(200),
+          description: z.string().max(1000).optional(),
+          fields: z.array(FieldSchema).max(50),
+          is_published: z.boolean(),
+        })
+        .parse(d),
   )
   .handler(async ({ context, data }) => {
     const rows = await sql`
@@ -168,7 +165,15 @@ export const deleteSubmission = createServerFn({ method: "POST" })
 // Public — no auth. Used by the public share page.
 export const getPublicForm = createServerFn({ method: "GET" })
   .inputValidator((d: { token: string }) =>
-    z.object({ token: z.string().min(8).max(64).regex(/^[a-zA-Z0-9_-]+$/) }).parse(d),
+    z
+      .object({
+        token: z
+          .string()
+          .min(8)
+          .max(64)
+          .regex(/^[a-zA-Z0-9_-]+$/),
+      })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const forms = await sql`
@@ -179,24 +184,32 @@ export const getPublicForm = createServerFn({ method: "GET" })
     if (forms.length === 0) return null;
     const form = forms[0];
     if (!form.is_published) return null;
-    return form as unknown as Pick<FormRecord, "id" | "title" | "description" | "fields" | "is_published" | "share_token">;
+    return form as unknown as Pick<
+      FormRecord,
+      "id" | "title" | "description" | "fields" | "is_published" | "share_token"
+    >;
   });
 
 export const submitPublicForm = createServerFn({ method: "POST" })
-  .inputValidator((d: {
-    token: string;
-    data: Record<string, unknown>;
-    submitter_name?: string;
-    submitter_email?: string;
-  }) =>
-    z
-      .object({
-        token: z.string().min(8).max(64).regex(/^[a-zA-Z0-9_-]+$/),
-        data: z.record(z.string(), z.unknown()),
-        submitter_name: z.string().max(200).optional(),
-        submitter_email: z.string().email().max(255).optional(),
-      })
-      .parse(d),
+  .inputValidator(
+    (d: {
+      token: string;
+      data: Record<string, unknown>;
+      submitter_name?: string;
+      submitter_email?: string;
+    }) =>
+      z
+        .object({
+          token: z
+            .string()
+            .min(8)
+            .max(64)
+            .regex(/^[a-zA-Z0-9_-]+$/),
+          data: z.record(z.string(), z.unknown()),
+          submitter_name: z.string().max(200).optional(),
+          submitter_email: z.string().email().max(255).optional(),
+        })
+        .parse(d),
   )
   .handler(async ({ data }) => {
     const forms = await sql`

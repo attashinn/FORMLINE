@@ -1,10 +1,18 @@
 import { useAuth as useClerkAuth, useUser } from "@clerk/tanstack-react-start";
 
+type FormattedUser = {
+  id: string;
+  email: string;
+  user_metadata: {
+    full_name: string;
+  };
+};
+
 export function useAuth() {
-  const { isLoaded, userId, sessionId } = useClerkAuth();
+  const { isLoaded, sessionId } = useClerkAuth();
   const { user } = useUser();
 
-  const formattedUser = user
+  const formattedUser: FormattedUser | null = user
     ? {
         id: user.id,
         email: user.primaryEmailAddress?.emailAddress ?? "",
@@ -16,7 +24,7 @@ export function useAuth() {
 
   return {
     session: sessionId ? { user: formattedUser } : null,
-    user: formattedUser as any,
+    user: formattedUser,
     loading: !isLoaded,
   };
 }

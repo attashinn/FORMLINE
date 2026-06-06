@@ -2,16 +2,27 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { SiteHeader } from "@/components/site-header";
-import { exportClientsCsv, formatRelative, useClients, type ClientStatus } from "@/lib/clients-store";
+import {
+  exportClientsCsv,
+  formatRelative,
+  useClients,
+  type ClientStatus,
+} from "@/lib/clients-store";
 import { ArrowUpRight, Download, LayoutGrid, Rows3, Search } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — Client Profile Hub" },
-      { name: "description", content: "All active client partnerships, intake status, and pipeline at a glance." },
+      {
+        name: "description",
+        content: "All active client partnerships, intake status, and pipeline at a glance.",
+      },
       { property: "og:title", content: "Dashboard — Client Profile Hub" },
-      { property: "og:description", content: "All active client partnerships, intake status, and pipeline at a glance." },
+      {
+        property: "og:description",
+        content: "All active client partnerships, intake status, and pipeline at a glance.",
+      },
     ],
   }),
   component: Dashboard,
@@ -99,8 +110,8 @@ function Dashboard() {
               Active <span className="italic text-muted-foreground">partnerships</span>
             </h1>
             <p className="max-w-[58ch] text-pretty text-muted-foreground">
-              Oversee client onboarding, project requirements, and communication cycles from a single, quiet interface
-              made for studios that care about the details.
+              Oversee client onboarding, project requirements, and communication cycles from a
+              single, quiet interface made for studios that care about the details.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -186,7 +197,9 @@ function Dashboard() {
               onClick={() => setView("table")}
               className={
                 "inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors " +
-                (view === "table" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground")
+                (view === "table"
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground")
               }
             >
               <Rows3 className="size-3.5" /> Table
@@ -195,7 +208,9 @@ function Dashboard() {
               onClick={() => setView("cards")}
               className={
                 "inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors " +
-                (view === "cards" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground")
+                (view === "cards"
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground")
               }
             >
               <LayoutGrid className="size-3.5" /> Cards
@@ -207,7 +222,9 @@ function Dashboard() {
         {filtered.length === 0 ? (
           <div className="rounded-2xl bg-surface px-6 py-16 text-center ring-1 ring-hairline">
             <p className="font-serif text-2xl">No matching clients</p>
-            <p className="mt-2 text-sm text-muted-foreground">Try a different filter, or start a new intake.</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Try a different filter, or start a new intake.
+            </p>
             <Link
               to="/intake"
               className="mt-6 inline-flex h-9 items-center rounded-lg bg-foreground px-4 text-sm font-medium text-background"
@@ -232,7 +249,11 @@ function Dashboard() {
                 {filtered.map((c) => (
                   <tr key={c.id} className="group transition-colors hover:bg-secondary/60">
                     <td className="px-6 py-4">
-                      <Link to="/clients/$id" params={{ id: c.id }} className="flex items-center gap-3">
+                      <Link
+                        to="/clients/$id"
+                        params={{ id: c.id }}
+                        className="flex items-center gap-3"
+                      >
                         <div
                           className="grid size-9 place-items-center rounded-full ring-1 ring-hairline"
                           style={{ background: c.brandColors[0] ?? "#e4e4e7" }}
@@ -253,7 +274,9 @@ function Dashboard() {
                     <td className="px-6 py-4 text-muted-foreground">{c.industry}</td>
                     <td className="px-6 py-4">{statusChip(c.status)}</td>
                     <td className="px-6 py-4 text-muted-foreground">{c.budget || "—"}</td>
-                    <td className="px-6 py-4 text-muted-foreground">{formatRelative(c.updatedAt)}</td>
+                    <td className="px-6 py-4 text-muted-foreground">
+                      {formatRelative(c.updatedAt)}
+                    </td>
                     <td className="px-6 py-4 text-right">
                       <Link
                         to="/clients/$id"
@@ -282,7 +305,10 @@ function Dashboard() {
                     className="grid size-12 place-items-center rounded-xl ring-1 ring-hairline"
                     style={{ background: c.brandColors[0] ?? "#e4e4e7" }}
                   >
-                    <span className="font-serif text-xl" style={{ color: c.brandColors[2] ?? "#fff" }}>
+                    <span
+                      className="font-serif text-xl"
+                      style={{ color: c.brandColors[2] ?? "#fff" }}
+                    >
                       {c.company.slice(0, 1)}
                     </span>
                   </div>
@@ -290,7 +316,9 @@ function Dashboard() {
                 </div>
                 <div>
                   <div className="font-serif text-2xl leading-tight">{c.company}</div>
-                  <div className="mt-1 text-xs text-muted-foreground">{c.industry} · {c.location}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {c.industry} · {c.location}
+                  </div>
                 </div>
                 <p className="line-clamp-2 text-sm text-muted-foreground">{c.goals}</p>
                 <div className="mt-auto flex items-center justify-between border-t border-hairline pt-3 text-xs text-muted-foreground">

@@ -46,7 +46,11 @@ export function SiteHeader() {
           >
             New form
           </Link>
-          <button onClick={handleSignOut} className="rounded-md p-2 text-muted-foreground hover:text-foreground" aria-label="Sign out">
+          <button
+            onClick={handleSignOut}
+            className="rounded-md p-2 text-muted-foreground hover:text-foreground"
+            aria-label="Sign out"
+          >
             <LogOut className="size-4" />
           </button>
         </div>

@@ -23,7 +23,11 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Formline — Send forms. Get responses. Stay in control." },
-      { name: "description", content: "Build branded intake forms, share them with one link, and collect client responses in a beautifully organized dashboard." },
+      {
+        name: "description",
+        content:
+          "Build branded intake forms, share them with one link, and collect client responses in a beautifully organized dashboard.",
+      },
       { property: "og:title", content: "Formline" },
       { property: "og:description", content: "Send forms. Get responses. Stay in control." },
     ],
@@ -41,15 +45,30 @@ function Home() {
             <Logo />
           </Link>
           <nav className="hidden items-center gap-8 text-sm text-white/60 md:flex">
-            <a href="#features" className="hover:text-white">Features</a>
-            <a href="#templates" className="hover:text-white">Templates</a>
-            <a href="#workspace" className="hover:text-white">Workspace</a>
-            <a href="#how" className="hover:text-white">How it works</a>
-            <a href="#pricing" className="hover:text-white">Pricing</a>
+            <a href="#features" className="hover:text-white">
+              Features
+            </a>
+            <a href="#templates" className="hover:text-white">
+              Templates
+            </a>
+            <a href="#workspace" className="hover:text-white">
+              Workspace
+            </a>
+            <a href="#how" className="hover:text-white">
+              How it works
+            </a>
+            <a href="#pricing" className="hover:text-white">
+              Pricing
+            </a>
           </nav>
           <div className="flex items-center gap-3">
-            <Link to="/auth" className="text-sm text-white/70 hover:text-white">Sign in</Link>
-            <Link to="/auth" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white px-3.5 text-sm font-medium text-black hover:bg-white/90">
+            <Link to="/auth" className="text-sm text-white/70 hover:text-white">
+              Sign in
+            </Link>
+            <Link
+              to="/auth"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white px-3.5 text-sm font-medium text-black hover:bg-white/90"
+            >
               Start free <ArrowRight className="size-3.5" />
             </Link>
           </div>
@@ -66,17 +85,27 @@ function Home() {
             New — Send forms via shareable link or email
           </div>
           <h1 className="mx-auto mt-6 max-w-3xl text-5xl font-semibold leading-[1.05] tracking-tight text-white md:text-7xl">
-            Send forms.<br />
-            <span className="bg-gradient-to-r from-white via-white to-[#7C5CFF] bg-clip-text text-transparent">Collect responses.</span>
+            Send forms.
+            <br />
+            <span className="bg-gradient-to-r from-white via-white to-[#7C5CFF] bg-clip-text text-transparent">
+              Collect responses.
+            </span>
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-pretty text-base text-white/60 md:text-lg">
-            The intake workspace for modern studios. Build a form in minutes, share a link, and watch responses land in a calm, organized dashboard.
+            The intake workspace for modern studios. Build a form in minutes, share a link, and
+            watch responses land in a calm, organized dashboard.
           </p>
           <div className="mt-10 flex items-center justify-center gap-3">
-            <Link to="/auth" className="inline-flex h-11 items-center gap-2 rounded-lg bg-white px-5 text-sm font-medium text-black transition-opacity hover:opacity-90">
+            <Link
+              to="/auth"
+              className="inline-flex h-11 items-center gap-2 rounded-lg bg-white px-5 text-sm font-medium text-black transition-opacity hover:opacity-90"
+            >
               Start for free <ArrowRight className="size-4" />
             </Link>
-            <Link to="/auth" className="inline-flex h-11 items-center rounded-lg border border-white/10 bg-white/5 px-5 text-sm font-medium text-white hover:bg-white/10">
+            <Link
+              to="/auth"
+              className="inline-flex h-11 items-center rounded-lg border border-white/10 bg-white/5 px-5 text-sm font-medium text-white hover:bg-white/10"
+            >
               Open dashboard
             </Link>
           </div>
@@ -100,18 +129,49 @@ function Home() {
       <section id="features" className="border-t border-white/5 py-24">
         <div className="mx-auto max-w-6xl px-6">
           <div className="max-w-2xl">
-            <span className="text-xs font-medium uppercase tracking-[0.18em] text-[#7C5CFF]">Built for studios</span>
-            <h2 className="mt-3 text-4xl font-semibold tracking-tight text-white md:text-5xl">Everything you need to onboard a client.</h2>
-            <p className="mt-4 text-white/60">No more lost emails, scattered PDFs, or back-and-forth. One link, one inbox, one place.</p>
+            <span className="text-xs font-medium uppercase tracking-[0.18em] text-[#7C5CFF]">
+              Built for studios
+            </span>
+            <h2 className="mt-3 text-4xl font-semibold tracking-tight text-white md:text-5xl">
+              Everything you need to onboard a client.
+            </h2>
+            <p className="mt-4 text-white/60">
+              No more lost emails, scattered PDFs, or back-and-forth. One link, one inbox, one
+              place.
+            </p>
           </div>
           <div className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 md:grid-cols-3">
             {[
-              { i: Sparkles, t: "Dynamic builder", d: "Drag in text, email, select, date, and checkbox fields. Required toggles. No code." },
-              { i: Link2, t: "Shareable links", d: "Every form gets a clean public URL. Copy, share, embed — works anywhere." },
-              { i: Mail, t: "Send via email", d: "Email the link to a client in one click with a pre-filled message." },
-              { i: Inbox, t: "Unified inbox", d: "All responses land in one organized dashboard. Filter, search, export." },
-              { i: Zap, t: "Instant updates", d: "Edit a form anytime — the share link stays the same. No reposting required." },
-              { i: Shield, t: "Private by default", d: "Only you see responses. Each workspace is fully isolated." },
+              {
+                i: Sparkles,
+                t: "Dynamic builder",
+                d: "Drag in text, email, select, date, and checkbox fields. Required toggles. No code.",
+              },
+              {
+                i: Link2,
+                t: "Shareable links",
+                d: "Every form gets a clean public URL. Copy, share, embed — works anywhere.",
+              },
+              {
+                i: Mail,
+                t: "Send via email",
+                d: "Email the link to a client in one click with a pre-filled message.",
+              },
+              {
+                i: Inbox,
+                t: "Unified inbox",
+                d: "All responses land in one organized dashboard. Filter, search, export.",
+              },
+              {
+                i: Zap,
+                t: "Instant updates",
+                d: "Edit a form anytime — the share link stays the same. No reposting required.",
+              },
+              {
+                i: Shield,
+                t: "Private by default",
+                d: "Only you see responses. Each workspace is fully isolated.",
+              },
             ].map((f) => (
               <div key={f.t} className="bg-[#0A0A0B] p-8">
                 <f.i className="size-5 text-[#7C5CFF]" />
@@ -128,12 +188,15 @@ function Home() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid items-center gap-16 lg:grid-cols-2">
             <div>
-              <span className="text-xs font-medium uppercase tracking-[0.18em] text-[#7C5CFF]">Ready in seconds</span>
+              <span className="text-xs font-medium uppercase tracking-[0.18em] text-[#7C5CFF]">
+                Ready in seconds
+              </span>
               <h2 className="mt-3 text-4xl font-semibold tracking-tight text-white md:text-5xl">
                 Start from a template, not a blank page.
               </h2>
               <p className="mt-4 text-white/60">
-                Six polished starting points cover the workflows studios run every day — client intake, contact forms, RSVPs, feedback, hiring, and newsletters.
+                Six polished starting points cover the workflows studios run every day — client
+                intake, contact forms, RSVPs, feedback, hiring, and newsletters.
               </p>
               <ul className="mt-8 space-y-3 text-sm text-white/70">
                 {[
@@ -157,8 +220,13 @@ function Home() {
                 { tag: "Hiring", title: "Job application", fields: 6 },
                 { tag: "Growth", title: "Newsletter signup", fields: 3 },
               ].map((tpl) => (
-                <div key={tpl.title} className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
-                  <span className="text-[10px] font-medium uppercase tracking-wider text-[#7C5CFF]">{tpl.tag}</span>
+                <div
+                  key={tpl.title}
+                  className="rounded-xl border border-white/10 bg-white/[0.03] p-5"
+                >
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-[#7C5CFF]">
+                    {tpl.tag}
+                  </span>
                   <h3 className="mt-2 text-base font-semibold text-white">{tpl.title}</h3>
                   <p className="mt-1 text-xs text-white/45">{tpl.fields} fields</p>
                 </div>
@@ -172,12 +240,15 @@ function Home() {
       <section id="workspace" className="border-t border-white/5 py-24">
         <div className="mx-auto max-w-6xl px-6">
           <div className="max-w-2xl">
-            <span className="text-xs font-medium uppercase tracking-[0.18em] text-[#7C5CFF]">Beyond the form</span>
+            <span className="text-xs font-medium uppercase tracking-[0.18em] text-[#7C5CFF]">
+              Beyond the form
+            </span>
             <h2 className="mt-3 text-4xl font-semibold tracking-tight text-white md:text-5xl">
               A full client workspace, not just submissions.
             </h2>
             <p className="mt-4 text-white/60">
-              Every response becomes a living client profile — with project scope, brand assets, internal notes, and activity history in one place.
+              Every response becomes a living client profile — with project scope, brand assets,
+              internal notes, and activity history in one place.
             </p>
           </div>
           <div className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -213,7 +284,10 @@ function Home() {
                 d: "Find any client instantly. Switch between table and card views to match how you work.",
               },
             ].map((f) => (
-              <div key={f.t} className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent p-6">
+              <div
+                key={f.t}
+                className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent p-6"
+              >
                 <f.i className="size-5 text-[#7C5CFF]" />
                 <h3 className="mt-4 text-base font-semibold text-white">{f.t}</h3>
                 <p className="mt-2 text-sm text-white/55">{f.d}</p>
@@ -227,12 +301,15 @@ function Home() {
       <section id="use-cases" className="border-t border-white/5 py-24">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center">
-            <span className="text-xs font-medium uppercase tracking-[0.18em] text-[#7C5CFF]">Built for you</span>
+            <span className="text-xs font-medium uppercase tracking-[0.18em] text-[#7C5CFF]">
+              Built for you
+            </span>
             <h2 className="mt-3 text-4xl font-semibold tracking-tight text-white md:text-5xl">
               One tool, many workflows.
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-white/60">
-              Whether you run a design studio, freelance practice, or agency — Formline adapts to how you onboard and manage clients.
+              Whether you run a design studio, freelance practice, or agency — Formline adapts to
+              how you onboard and manage clients.
             </p>
           </div>
           <div className="mt-16 grid gap-6 md:grid-cols-3">
@@ -253,7 +330,10 @@ function Home() {
                 d: "Standardize onboarding across your team. Templates ensure every client provides the same information upfront.",
               },
             ].map((u) => (
-              <div key={u.t} className="rounded-2xl border border-white/10 bg-[#0A0A0B] p-8 text-center">
+              <div
+                key={u.t}
+                className="rounded-2xl border border-white/10 bg-[#0A0A0B] p-8 text-center"
+              >
                 <div className="mx-auto grid size-12 place-items-center rounded-xl bg-[#7C5CFF]/10">
                   <u.i className="size-5 text-[#7C5CFF]" />
                 </div>
@@ -268,14 +348,31 @@ function Home() {
       {/* how it works */}
       <section id="how" className="border-t border-white/5 py-24">
         <div className="mx-auto max-w-6xl px-6">
-          <h2 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">Three steps. That's it.</h2>
+          <h2 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
+            Three steps. That's it.
+          </h2>
           <div className="mt-16 grid gap-8 md:grid-cols-3">
             {[
-              { n: "01", t: "Build", d: "Compose your form from clean field primitives. Reorder, set required, add options." },
-              { n: "02", t: "Share", d: "Copy the link or send it by email. Your client opens a branded page — no signup needed." },
-              { n: "03", t: "Receive", d: "Responses appear in your dashboard with timestamps, ready to review." },
+              {
+                n: "01",
+                t: "Build",
+                d: "Compose your form from clean field primitives. Reorder, set required, add options.",
+              },
+              {
+                n: "02",
+                t: "Share",
+                d: "Copy the link or send it by email. Your client opens a branded page — no signup needed.",
+              },
+              {
+                n: "03",
+                t: "Receive",
+                d: "Responses appear in your dashboard with timestamps, ready to review.",
+              },
             ].map((s) => (
-              <div key={s.n} className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent p-6">
+              <div
+                key={s.n}
+                className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent p-6"
+              >
                 <div className="font-mono text-xs text-[#7C5CFF]">{s.n}</div>
                 <h3 className="mt-4 text-xl font-semibold text-white">{s.t}</h3>
                 <p className="mt-2 text-sm text-white/55">{s.d}</p>
@@ -288,14 +385,28 @@ function Home() {
       {/* pricing / CTA */}
       <section id="pricing" className="border-t border-white/5 py-24">
         <div className="mx-auto max-w-3xl px-6 text-center">
-          <h2 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">Start free. Forever.</h2>
-          <p className="mt-4 text-white/60">Unlimited forms and responses while in beta. No credit card.</p>
+          <h2 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
+            Start free. Forever.
+          </h2>
+          <p className="mt-4 text-white/60">
+            Unlimited forms and responses while in beta. No credit card.
+          </p>
           <ul className="mx-auto mt-8 inline-flex flex-col items-start gap-2 text-sm text-white/70">
-            {["Unlimited forms", "Unlimited responses", "Shareable links + email", "Built-in dashboard"].map((f) => (
-              <li key={f} className="flex items-center gap-2"><Check className="size-4 text-[#7C5CFF]" /> {f}</li>
+            {[
+              "Unlimited forms",
+              "Unlimited responses",
+              "Shareable links + email",
+              "Built-in dashboard",
+            ].map((f) => (
+              <li key={f} className="flex items-center gap-2">
+                <Check className="size-4 text-[#7C5CFF]" /> {f}
+              </li>
             ))}
           </ul>
-          <Link to="/auth" className="mt-10 inline-flex h-12 items-center gap-2 rounded-lg bg-white px-6 text-sm font-medium text-black hover:opacity-90">
+          <Link
+            to="/auth"
+            className="mt-10 inline-flex h-12 items-center gap-2 rounded-lg bg-white px-6 text-sm font-medium text-black hover:opacity-90"
+          >
             Create your workspace <ArrowRight className="size-4" />
           </Link>
         </div>

@@ -85,14 +85,31 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "A premium client onboarding workspace. Multi-step intake, organized profiles, and a calm, editorial dashboard for creative agencies and freelancers.",
       },
       { name: "author", content: "Client Profile Hub" },
-      { property: "og:title", content: "Client Profile Hub — Onboarding for agencies & freelancers" },
-      { property: "og:description", content: "Client Hub is a modern SaaS web application for agencies and freelancers to streamline client intake and management." },
+      {
+        property: "og:title",
+        content: "Client Profile Hub — Onboarding for agencies & freelancers",
+      },
+      {
+        property: "og:description",
+        content:
+          "Client Hub is a modern SaaS web application for agencies and freelancers to streamline client intake and management.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "Client Profile Hub — Onboarding for agencies & freelancers" },
-      { name: "description", content: "Client Hub is a modern SaaS web application for agencies and freelancers to streamline client intake and management." },
-      { name: "twitter:description", content: "Client Hub is a modern SaaS web application for agencies and freelancers to streamline client intake and management." },
-
+      {
+        name: "twitter:title",
+        content: "Client Profile Hub — Onboarding for agencies & freelancers",
+      },
+      {
+        name: "description",
+        content:
+          "Client Hub is a modern SaaS web application for agencies and freelancers to streamline client intake and management.",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "Client Hub is a modern SaaS web application for agencies and freelancers to streamline client intake and management.",
+      },
     ],
     links: [
       { rel: "icon", type: "image/png", href: "/favicon.png" },
@@ -130,11 +147,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
-    <ClerkProvider
-      signInUrl="/auth"
-      signUpUrl="/auth"
-      appearance={clerkAppearance}
-    >
+    <ClerkProvider signInUrl="/auth" signUpUrl="/auth" appearance={clerkAppearance}>
       <QueryClientProvider client={queryClient}>
         <ClientsProvider>
           <SmoothScroll>

@@ -17,7 +17,10 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in — Formline" },
-      { name: "description", content: "Sign in to your Formline workspace to build and share forms." },
+      {
+        name: "description",
+        content: "Sign in to your Formline workspace to build and share forms.",
+      },
     ],
   }),
   component: AuthPage,
@@ -52,11 +55,13 @@ function AuthPage() {
               : "Get started with forms, client intake, and your dashboard."}
           </p>
         </div>
-        
+
         {mode === "signin" ? (
           <div className="flex flex-col items-center w-full animate-in fade-in duration-300">
             {!isLoaded ? (
-              <div className="flex h-40 w-full items-center justify-center text-sm text-white/50">Loading…</div>
+              <div className="flex h-40 w-full items-center justify-center text-sm text-white/50">
+                Loading…
+              </div>
             ) : (
               <SignIn {...authProps} />
             )}
@@ -70,7 +75,9 @@ function AuthPage() {
         ) : (
           <div className="flex flex-col items-center w-full animate-in fade-in duration-300">
             {!isLoaded ? (
-              <div className="flex h-40 w-full items-center justify-center text-sm text-white/50">Loading…</div>
+              <div className="flex h-40 w-full items-center justify-center text-sm text-white/50">
+                Loading…
+              </div>
             ) : (
               <SignUp {...authProps} />
             )}

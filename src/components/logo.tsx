@@ -8,17 +8,9 @@ type LogoProps = {
 };
 
 export function Logo({ className, iconOnly = false, variant = "light" }: LogoProps) {
-  const src = iconOnly
-    ? "/favicon.png"
-    : variant === "dark"
-      ? "/logo-dark.svg"
-      : "/logo.svg";
+  const src = iconOnly ? "/favicon.png" : variant === "dark" ? "/logo-dark.svg" : "/logo.svg";
 
   return (
-    <img
-      src={src}
-      alt="Formline"
-      className={cn(iconOnly ? "size-8" : "h-7 w-auto", className)}
-    />
+    <img src={src} alt="Formline" className={cn(iconOnly ? "size-8" : "h-7 w-auto", className)} />
   );
 }

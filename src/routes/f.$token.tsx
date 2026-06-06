@@ -15,7 +15,12 @@ function PublicForm() {
   const { token } = Route.useParams();
   const get = useServerFn(getPublicForm);
   const submit = useServerFn(submitPublicForm);
-  const { data: form, isLoading, isError, error } = useQuery({
+  const {
+    data: form,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ["public-form", token],
     queryFn: () => get({ data: { token } }),
     retry: 1,
@@ -56,7 +61,9 @@ function PublicForm() {
         <div className="mx-auto max-w-xl px-6 py-20 text-center">
           <h1 className="text-2xl font-semibold">This form did not load</h1>
           <p className="mt-2 text-white/60">
-            {error instanceof Error ? error.message : "Refresh the page or ask the sender for a new link."}
+            {error instanceof Error
+              ? error.message
+              : "Refresh the page or ask the sender for a new link."}
           </p>
         </div>
       </div>
@@ -68,7 +75,9 @@ function PublicForm() {
       <div className="min-h-screen bg-[#0A0A0B] text-white">
         <div className="mx-auto max-w-xl px-6 py-20 text-center">
           <h1 className="text-2xl font-semibold">Form unavailable</h1>
-          <p className="mt-2 text-white/60">This link may have expired or the form was unpublished.</p>
+          <p className="mt-2 text-white/60">
+            This link may have expired or the form was unpublished.
+          </p>
         </div>
       </div>
     );
@@ -78,7 +87,9 @@ function PublicForm() {
     return (
       <div className="min-h-screen bg-[#0A0A0B] text-white">
         <div className="mx-auto max-w-xl px-6 py-24 text-center">
-          <div className="mx-auto grid size-14 place-items-center rounded-full bg-[#7C5CFF]/20 text-[#7C5CFF]"><Check className="size-7" /></div>
+          <div className="mx-auto grid size-14 place-items-center rounded-full bg-[#7C5CFF]/20 text-[#7C5CFF]">
+            <Check className="size-7" />
+          </div>
           <h1 className="mt-6 text-3xl font-semibold">Thank you</h1>
           <p className="mt-2 text-white/60">Your response has been received.</p>
         </div>
@@ -95,7 +106,10 @@ function PublicForm() {
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     for (const f of fields) {
-      if (f.required && (values[f.id] === undefined || values[f.id] === "" || values[f.id] === false)) {
+      if (
+        f.required &&
+        (values[f.id] === undefined || values[f.id] === "" || values[f.id] === false)
+      ) {
         toast.error(`${f.label} is required`);
         return;
       }
@@ -103,7 +117,8 @@ function PublicForm() {
     mut.mutate();
   }
 
-  const inp = "h-11 w-full rounded-lg border border-white/10 bg-white/5 px-3.5 text-sm text-white placeholder:text-white/30 focus:border-[#7C5CFF] focus:outline-none";
+  const inp =
+    "h-11 w-full rounded-lg border border-white/10 bg-white/5 px-3.5 text-sm text-white placeholder:text-white/30 focus:border-[#7C5CFF] focus:outline-none";
 
   return (
     <div className="min-h-screen bg-[#0A0A0B] text-[#E5E5E7]">
@@ -114,8 +129,19 @@ function PublicForm() {
 
         <form onSubmit={onSubmit} className="mt-10 space-y-5">
           <div className="grid gap-3 sm:grid-cols-2">
-            <input className={inp} placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} />
-            <input type="email" className={inp} placeholder="Your email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input
+              className={inp}
+              placeholder="Your name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <input
+              type="email"
+              className={inp}
+              placeholder="Your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
 
           {fields.map((f) => (
@@ -124,20 +150,47 @@ function PublicForm() {
                 {f.label} {f.required && <span className="text-[#7C5CFF]">*</span>}
               </label>
               {f.type === "textarea" ? (
-                <textarea className={inp + " min-h-[110px] py-2.5"} value={String(values[f.id] ?? "")} onChange={(e) => set(f.id, e.target.value)} placeholder={f.placeholder} />
+                <textarea
+                  className={inp + " min-h-[110px] py-2.5"}
+                  value={String(values[f.id] ?? "")}
+                  onChange={(e) => set(f.id, e.target.value)}
+                  placeholder={f.placeholder}
+                />
               ) : f.type === "select" ? (
-                <select className={inp} value={String(values[f.id] ?? "")} onChange={(e) => set(f.id, e.target.value)}>
+                <select
+                  className={inp}
+                  value={String(values[f.id] ?? "")}
+                  onChange={(e) => set(f.id, e.target.value)}
+                >
                   <option value="">Select…</option>
-                  {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
+                  {(f.options ?? []).map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
                 </select>
               ) : f.type === "checkbox" ? (
                 <label className="flex items-center gap-2 text-sm text-white/80">
-                  <input type="checkbox" checked={!!values[f.id]} onChange={(e) => set(f.id, e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    checked={!!values[f.id]}
+                    onChange={(e) => set(f.id, e.target.checked)}
+                  />
                   Yes
                 </label>
               ) : (
                 <input
-                  type={f.type === "date" ? "date" : f.type === "number" ? "number" : f.type === "email" ? "email" : f.type === "tel" ? "tel" : "text"}
+                  type={
+                    f.type === "date"
+                      ? "date"
+                      : f.type === "number"
+                        ? "number"
+                        : f.type === "email"
+                          ? "email"
+                          : f.type === "tel"
+                            ? "tel"
+                            : "text"
+                  }
                   className={inp}
                   value={String(values[f.id] ?? "")}
                   onChange={(e) => set(f.id, e.target.value)}
