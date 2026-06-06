@@ -6,7 +6,14 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { nitro } from "nitro/vite";
 
 export default defineConfig({
-  plugins: [tanstackStart(), nitro(), react(), tailwindcss(), tsconfigPaths()],
+  plugins: [
+    tanstackStart(),
+    // Disable Nitro's static index.html renderer so TanStack Start SSR handles pages.
+    nitro({ renderer: false }),
+    react(),
+    tailwindcss(),
+    tsconfigPaths(),
+  ],
   optimizeDeps: {
     exclude: ["@tanstack/react-start"],
   },
