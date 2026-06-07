@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, Paperclip, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Paperclip, X } from "@/components/heroicons";
 import { SiteHeader } from "@/components/site-header";
 import { useClients, type ClientFile } from "@/lib/clients-store";
 import { toast } from "sonner";

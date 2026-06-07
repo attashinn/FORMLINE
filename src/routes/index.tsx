@@ -19,7 +19,7 @@ import {
   Sparkles,
   Users,
   Zap,
-} from "lucide-react";
+} from "@/components/heroicons";
 
 export const Route = createFileRoute("/")({
   head: () => ({

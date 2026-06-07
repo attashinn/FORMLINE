@@ -1,8 +1,9 @@
 import { createServerFn, createMiddleware } from "@tanstack/react-start";
 import { z } from "zod";
-import { auth } from "@clerk/tanstack-react-start/server";
+import { auth, clerkClient } from "@clerk/tanstack-react-start/server";
 import { sql } from "@/lib/db";
 import crypto from "crypto";
+import { getEmailConfig, sendFormLinkEmail as deliverFormLinkEmail } from "./email.server";
 import type { FormField, FormRecord, SubmissionRecord } from "./forms.types";
 
 /** Map a Clerk user id to a stable, valid UUID v4 for Postgres. */
@@ -21,6 +22,7 @@ export const requireClerkAuth = createMiddleware({ type: "function" }).server(as
   return next({
     context: {
       userId: mappedUuid,
+      clerkUserId: userId,
     },
   });
 });
@@ -34,15 +36,42 @@ const FieldSchema = z.object({
   options: z.array(z.string().min(1).max(200)).max(50).optional(),
 });
 
+function parseFields(raw: unknown): FormField[] {
+  if (Array.isArray(raw)) return raw as FormField[];
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? (parsed as FormField[]) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function normalizeFormRecord(row: Record<string, unknown>): FormRecord {
+  return {
+    id: String(row.id),
+    owner_id: String(row.owner_id),
+    title: String(row.title),
+    description: row.description != null ? String(row.description) : null,
+    fields: parseFields(row.fields),
+    share_token: String(row.share_token),
+    is_published: Boolean(row.is_published),
+    created_at: String(row.created_at),
+    updated_at: String(row.updated_at),
+  };
+}
+
 export const listForms = createServerFn({ method: "GET" })
   .middleware([requireClerkAuth])
   .handler(async ({ context }) => {
     const rows = await sql`
       SELECT * FROM forms
-      WHERE owner_id = ${context.userId}
+      WHERE owner_id = ${context.userId}::uuid
       ORDER BY updated_at DESC
     `;
-    return rows as unknown as FormRecord[];
+    return rows.map((row) => normalizeFormRecord(row as Record<string, unknown>));
   });
 
 export const getForm = createServerFn({ method: "GET" })
@@ -51,11 +80,11 @@ export const getForm = createServerFn({ method: "GET" })
   .handler(async ({ context, data }) => {
     const forms = await sql`
       SELECT * FROM forms
-      WHERE id = ${data.id} AND owner_id = ${context.userId}
+      WHERE id = ${data.id} AND owner_id = ${context.userId}::uuid
       LIMIT 1
     `;
     if (forms.length === 0) throw new Error("Not found");
-    const form = forms[0];
+    const form = normalizeFormRecord(forms[0] as Record<string, unknown>);
 
     const submissions = await sql`
       SELECT * FROM form_submissions
@@ -63,7 +92,7 @@ export const getForm = createServerFn({ method: "GET" })
       ORDER BY submitted_at DESC
     `;
     return {
-      form: form as unknown as FormRecord,
+      form,
       submissions: submissions as unknown as SubmissionRecord[],
     };
   });
@@ -82,10 +111,10 @@ export const createForm = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const rows = await sql`
       INSERT INTO forms (owner_id, title, description, fields)
-      VALUES (${context.userId}, ${data.title}, ${data.description ?? null}, ${JSON.stringify(data.fields)}::jsonb)
+      VALUES (${context.userId}::uuid, ${data.title}, ${data.description ?? null}, ${JSON.stringify(data.fields)}::jsonb)
       RETURNING *
     `;
-    return rows[0] as unknown as FormRecord;
+    return normalizeFormRecord(rows[0] as Record<string, unknown>);
   });
 
 export const updateForm = createServerFn({ method: "POST" })
@@ -116,11 +145,11 @@ export const updateForm = createServerFn({ method: "POST" })
           fields = ${JSON.stringify(data.fields)}::jsonb,
           is_published = ${data.is_published},
           updated_at = NOW()
-      WHERE id = ${data.id} AND owner_id = ${context.userId}
+      WHERE id = ${data.id} AND owner_id = ${context.userId}::uuid
       RETURNING *
     `;
     if (rows.length === 0) throw new Error("Not found or unauthorized");
-    return rows[0] as unknown as FormRecord;
+    return normalizeFormRecord(rows[0] as Record<string, unknown>);
   });
 
 export const deleteForm = createServerFn({ method: "POST" })
@@ -129,7 +158,7 @@ export const deleteForm = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const rows = await sql`
       DELETE FROM forms
-      WHERE id = ${data.id} AND owner_id = ${context.userId}
+      WHERE id = ${data.id} AND owner_id = ${context.userId}::uuid
       RETURNING id
     `;
     if (rows.length === 0) throw new Error("Not found or unauthorized");
@@ -150,7 +179,7 @@ export const deleteSubmission = createServerFn({ method: "POST" })
 
     const forms = await sql`
       SELECT id FROM forms
-      WHERE id = ${sub.form_id} AND owner_id = ${context.userId}
+      WHERE id = ${sub.form_id} AND owner_id = ${context.userId}::uuid
       LIMIT 1
     `;
     if (forms.length === 0) throw new Error("Unauthorized");
@@ -160,6 +189,43 @@ export const deleteSubmission = createServerFn({ method: "POST" })
       WHERE id = ${data.id}
     `;
     return { ok: true };
+  });
+
+export const sendFormLinkEmail = createServerFn({ method: "POST" })
+  .middleware([requireClerkAuth])
+  .inputValidator((d: { formId: string; to: string; message?: string }) =>
+    z
+      .object({
+        formId: z.string().uuid(),
+        to: z.string().email().max(255),
+        message: z.string().max(2000).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const forms = await sql`
+      SELECT title, share_token, is_published FROM forms
+      WHERE id = ${data.formId} AND owner_id = ${context.userId}::uuid
+      LIMIT 1
+    `;
+    if (forms.length === 0) throw new Error("Form not found");
+    const form = forms[0];
+    if (!form.is_published) throw new Error("Publish the form before emailing it to a client");
+
+    const { appUrl } = getEmailConfig();
+    const shareUrl = `${appUrl}/f/${form.share_token}`;
+    const user = await clerkClient().users.getUser(context.clerkUserId);
+    const senderName = user.fullName || user.primaryEmailAddress?.emailAddress || undefined;
+
+    const email = await deliverFormLinkEmail({
+      to: data.to,
+      formTitle: form.title,
+      shareUrl,
+      senderName,
+      message: data.message,
+    });
+
+    return { ok: true, emailId: email?.id };
   });
 
 // Public — no auth. Used by the public share page.

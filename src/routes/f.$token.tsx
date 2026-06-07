@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getPublicForm, submitPublicForm } from "@/lib/forms.functions";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "@/components/heroicons";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/f/$token")({

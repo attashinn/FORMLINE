@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { SiteHeader } from "@/components/site-header";
 import { createForm, deleteForm, listForms } from "@/lib/forms.functions";
 import { FORM_TEMPLATES, type FormTemplate } from "@/lib/form-templates";
-import { ArrowUpRight, Plus, Trash2, FileText, Sparkles } from "lucide-react";
+import { ArrowUpRight, Plus, Trash2, FileText, Sparkles } from "@/components/heroicons";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/forms/")({
@@ -21,7 +21,18 @@ function FormsPage() {
   const create = useServerFn(createForm);
   const del = useServerFn(deleteForm);
 
-  const { data: forms = [], isLoading } = useQuery({ queryKey: ["forms"], queryFn: () => list() });
+  const {
+    data: forms = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["forms"],
+    queryFn: () => list(),
+    retry: 1,
+    staleTime: 0,
+  });
   const [title, setTitle] = useState("");
   const [creating, setCreating] = useState(false);
 
@@ -167,6 +178,19 @@ function FormsPage() {
         {isLoading ? (
           <div className="rounded-2xl bg-surface p-12 text-center text-muted-foreground ring-1 ring-hairline">
             Loading…
+          </div>
+        ) : isError ? (
+          <div className="rounded-2xl bg-surface p-12 text-center ring-1 ring-hairline">
+            <p className="font-serif text-2xl">Couldn&apos;t load forms</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {error instanceof Error ? error.message : "Check your database connection."}
+            </p>
+            <button
+              onClick={() => refetch()}
+              className="mt-6 inline-flex h-9 items-center rounded-lg bg-foreground px-4 text-sm font-medium text-background"
+            >
+              Try again
+            </button>
           </div>
         ) : forms.length === 0 ? (
           <motion.div

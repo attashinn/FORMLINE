@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { SiteHeader } from "@/components/site-header";
@@ -8,7 +10,16 @@ import {
   useClients,
   type ClientStatus,
 } from "@/lib/clients-store";
-import { ArrowUpRight, Download, LayoutGrid, Rows3, Search } from "lucide-react";
+import { listForms } from "@/lib/forms.functions";
+import {
+  ArrowUpRight,
+  Download,
+  FileText,
+  LayoutGrid,
+  Plus,
+  Rows3,
+  Search,
+} from "@/components/heroicons";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -50,6 +61,18 @@ function statusChip(status: ClientStatus) {
 
 function Dashboard() {
   const { clients } = useClients();
+  const list = useServerFn(listForms);
+  const {
+    data: forms = [],
+    isLoading: formsLoading,
+    isError: formsError,
+    refetch: refetchForms,
+  } = useQuery({
+    queryKey: ["forms"],
+    queryFn: () => list(),
+    retry: 1,
+    staleTime: 0,
+  });
   const [query, setQuery] = useState("");
   const [industry, setIndustry] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
@@ -132,11 +155,15 @@ function Dashboard() {
         </motion.section>
 
         {/* Stats strip */}
-        <section className="mb-10 grid grid-cols-3 divide-x divide-hairline rounded-2xl bg-surface ring-1 ring-hairline">
+        <section className="mb-10 grid grid-cols-2 divide-x divide-hairline rounded-2xl bg-surface ring-1 ring-hairline md:grid-cols-4">
           {[
+            { label: "Your forms", value: formsLoading ? "…" : forms.length },
+            {
+              label: "Published forms",
+              value: formsLoading ? "…" : forms.filter((f) => f.is_published).length,
+            },
             { label: "Total clients", value: stats.total },
             { label: "Open engagements", value: stats.open },
-            { label: "New this period", value: stats.newCount },
           ].map((s, i) => (
             <motion.div
               key={s.label}
@@ -152,6 +179,97 @@ function Dashboard() {
             </motion.div>
           ))}
         </section>
+
+        {/* Forms */}
+        <section className="mb-10">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="size-4 text-muted-foreground" />
+              <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Your forms
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/forms"
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                View all
+              </Link>
+              <Link
+                to="/forms"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-foreground px-3 text-xs font-medium text-background"
+              >
+                <Plus className="size-3.5" /> New form
+              </Link>
+            </div>
+          </div>
+
+          {formsLoading ? (
+            <div className="rounded-2xl bg-surface px-6 py-10 text-center text-sm text-muted-foreground ring-1 ring-hairline">
+              Loading forms…
+            </div>
+          ) : formsError ? (
+            <div className="rounded-2xl bg-surface px-6 py-10 text-center ring-1 ring-hairline">
+              <p className="font-medium">Couldn&apos;t load your forms</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Make sure DATABASE_URL is set on Vercel, then try again.
+              </p>
+              <button
+                onClick={() => refetchForms()}
+                className="mt-4 inline-flex h-8 items-center rounded-lg bg-foreground px-3 text-xs font-medium text-background"
+              >
+                Retry
+              </button>
+            </div>
+          ) : forms.length === 0 ? (
+            <div className="rounded-2xl bg-surface px-6 py-10 text-center ring-1 ring-hairline">
+              <p className="font-serif text-2xl">No forms yet</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Create a form to collect client responses.
+              </p>
+              <Link
+                to="/forms"
+                className="mt-4 inline-flex h-9 items-center rounded-lg bg-foreground px-4 text-sm font-medium text-background"
+              >
+                Create your first form
+              </Link>
+            </div>
+          ) : (
+            <ul className="divide-y divide-hairline overflow-hidden rounded-2xl bg-surface ring-1 ring-hairline">
+              {forms.slice(0, 5).map((form) => (
+                <li
+                  key={form.id}
+                  className="group relative flex items-center justify-between px-5 py-4 hover:bg-[#7C5CFF]/5"
+                >
+                  <Link
+                    to="/forms/$id"
+                    params={{ id: form.id }}
+                    className="absolute inset-0 z-0"
+                    aria-label={`Open ${form.title}`}
+                  />
+                  <div className="pointer-events-none relative z-10">
+                    <div className="font-medium">{form.title}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {form.fields.length} fields · {form.is_published ? "Published" : "Draft"} ·
+                      Updated {new Date(form.updated_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <span className="relative z-10 inline-flex items-center gap-1 text-sm text-muted-foreground group-hover:text-[#7C5CFF]">
+                    Open <ArrowUpRight className="size-3.5" />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Clients */}
+        <div className="mb-4 flex items-center gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            Clients
+          </h2>
+        </div>
 
         {/* Filters */}
         <section className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

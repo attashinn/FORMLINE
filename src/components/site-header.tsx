@@ -1,6 +1,6 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useClerk } from "@clerk/tanstack-react-start";
-import { LogOut } from "lucide-react";
+import { LogOut } from "@/components/heroicons";
 import { Logo } from "@/components/logo";
 
 export function SiteHeader() {

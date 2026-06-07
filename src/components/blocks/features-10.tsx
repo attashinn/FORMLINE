@@ -1,6 +1,13 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { ClipboardList, Inbox, LayoutTemplate, type LucideIcon, Send, Users } from "lucide-react";
+import {
+  ClipboardList,
+  Inbox,
+  LayoutTemplate,
+  type LucideIcon,
+  Send,
+  Users,
+} from "@/components/heroicons";
 import type { ReactNode } from "react";
 
 export function Features() {

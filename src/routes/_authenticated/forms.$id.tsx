@@ -11,7 +11,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { deleteSubmission, getForm, updateForm } from "@/lib/forms.functions";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { deleteSubmission, getForm, sendFormLinkEmail, updateForm } from "@/lib/forms.functions";
 import type { FieldType, FormField } from "@/lib/forms.types";
 import {
   AlignLeft,
@@ -30,7 +41,7 @@ import {
   TextCursorInput,
   ToggleLeft,
   Trash2,
-} from "lucide-react";
+} from "@/components/heroicons";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/forms/$id")({
@@ -81,6 +92,7 @@ function FormDetail() {
   const get = useServerFn(getForm);
   const upd = useServerFn(updateForm);
   const delSub = useServerFn(deleteSubmission);
+  const sendEmail = useServerFn(sendFormLinkEmail);
 
   const { data, isLoading } = useQuery({
     queryKey: ["form", id],
@@ -93,6 +105,9 @@ function FormDetail() {
   const [published, setPublished] = useState(true);
   const [tab, setTab] = useState<"builder" | "responses">("builder");
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
 
   useEffect(() => {
     if (data?.form) {
@@ -118,6 +133,24 @@ function FormDetail() {
   const delSubMut = useMutation({
     mutationFn: async (sid: string) => delSub({ data: { id: sid } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["form", id] }),
+  });
+
+  const emailMut = useMutation({
+    mutationFn: async () =>
+      sendEmail({
+        data: {
+          formId: id,
+          to: recipientEmail.trim(),
+          message: emailMessage.trim() || undefined,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Email sent");
+      setEmailOpen(false);
+      setRecipientEmail("");
+      setEmailMessage("");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to send email"),
   });
 
   if (isLoading || !data) {
@@ -238,14 +271,67 @@ function FormDetail() {
             >
               <Copy className="size-4" /> Copy
             </button>
-            <a
-              href={`mailto:?subject=${encodeURIComponent("Please complete this form: " + title)}&body=${encodeURIComponent("Hi,\n\nPlease take a moment to fill out this form:\n\n" + shareUrl + "\n\nThanks!")}`}
-              className="inline-flex h-9 items-center gap-2 rounded-lg bg-foreground px-3 text-sm font-medium text-background hover:bg-foreground/90"
+            <button
+              type="button"
+              onClick={() => setEmailOpen(true)}
+              disabled={!published || !shareUrl}
+              className="inline-flex h-9 items-center gap-2 rounded-lg bg-foreground px-3 text-sm font-medium text-background hover:bg-foreground/90 disabled:opacity-50"
             >
               <Mail className="size-4" /> Email to client
-            </a>
+            </button>
           </div>
         </div>
+
+        <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Email form to client</DialogTitle>
+              <DialogDescription>
+                Sends a branded email with your share link via Resend.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="client-email">Client email</Label>
+                <Input
+                  id="client-email"
+                  type="email"
+                  placeholder="client@company.com"
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email-message">Personal note (optional)</Label>
+                <Textarea
+                  id="email-message"
+                  placeholder="Add a short note for your client…"
+                  value={emailMessage}
+                  onChange={(e) => setEmailMessage(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <button
+                type="button"
+                onClick={() => setEmailOpen(false)}
+                className="inline-flex h-9 items-center rounded-lg px-3 text-sm ring-1 ring-hairline"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => emailMut.mutate()}
+                disabled={!recipientEmail.trim() || emailMut.isPending}
+                className="inline-flex h-9 items-center gap-2 rounded-lg bg-foreground px-3 text-sm font-medium text-background disabled:opacity-50"
+              >
+                <Mail className="size-4" />
+                {emailMut.isPending ? "Sending…" : "Send email"}
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Tabs */}
         <div className="mt-8 inline-flex rounded-lg bg-surface p-1 ring-1 ring-hairline">

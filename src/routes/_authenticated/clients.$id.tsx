@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Download, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, Sparkles, Trash2 } from "@/components/heroicons";
 import { SiteHeader } from "@/components/site-header";
 import { formatRelative, useClients, type ClientStatus } from "@/lib/clients-store";
 import { toast } from "sonner";
