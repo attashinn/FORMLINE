@@ -1,5 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Features } from "@/components/blocks/features-10";
 import { Logo } from "@/components/logo";
+import { ShinyButton } from "@/components/ui/shiny-button";
 import {
   ArrowRight,
   BarChart3,
@@ -36,6 +38,8 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const navigate = useNavigate();
+
   return (
     <div className="dark min-h-screen bg-[#0A0A0B] text-[#E5E5E7] antialiased">
       {/* nav */}
@@ -96,18 +100,9 @@ function Home() {
             watch responses land in a calm, organized dashboard.
           </p>
           <div className="mt-10 flex items-center justify-center gap-3">
-            <Link
-              to="/auth"
-              className="inline-flex h-11 items-center gap-2 rounded-lg bg-white px-5 text-sm font-medium text-black transition-opacity hover:opacity-90"
-            >
-              Start for free <ArrowRight className="size-4" />
-            </Link>
-            <Link
-              to="/auth"
-              className="inline-flex h-11 items-center rounded-lg border border-white/10 bg-white/5 px-5 text-sm font-medium text-white hover:bg-white/10"
-            >
-              Open dashboard
-            </Link>
+            <ShinyButton onClick={() => navigate({ to: "/auth" })}>
+              Get unlimited access
+            </ShinyButton>
           </div>
 
           <div className="relative mx-auto mt-20 max-w-6xl">
@@ -183,58 +178,7 @@ function Home() {
         </div>
       </section>
 
-      {/* templates */}
-      <section id="templates" className="border-t border-white/5 py-24">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="grid items-center gap-16 lg:grid-cols-2">
-            <div>
-              <span className="text-xs font-medium uppercase tracking-[0.18em] text-[#7C5CFF]">
-                Ready in seconds
-              </span>
-              <h2 className="mt-3 text-4xl font-semibold tracking-tight text-white md:text-5xl">
-                Start from a template, not a blank page.
-              </h2>
-              <p className="mt-4 text-white/60">
-                Six polished starting points cover the workflows studios run every day — client
-                intake, contact forms, RSVPs, feedback, hiring, and newsletters.
-              </p>
-              <ul className="mt-8 space-y-3 text-sm text-white/70">
-                {[
-                  "Pre-built field layouts with sensible defaults",
-                  "Customize labels, options, and required fields",
-                  "Publish instantly — no setup or configuration",
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-2">
-                    <Check className="mt-0.5 size-4 shrink-0 text-[#7C5CFF]" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {[
-                { tag: "Most popular", title: "Client intake", fields: 7 },
-                { tag: "Essential", title: "Contact us", fields: 4 },
-                { tag: "Events", title: "Event RSVP", fields: 6 },
-                { tag: "Feedback", title: "Project feedback", fields: 5 },
-                { tag: "Hiring", title: "Job application", fields: 6 },
-                { tag: "Growth", title: "Newsletter signup", fields: 3 },
-              ].map((tpl) => (
-                <div
-                  key={tpl.title}
-                  className="rounded-xl border border-white/10 bg-white/[0.03] p-5"
-                >
-                  <span className="text-[10px] font-medium uppercase tracking-wider text-[#7C5CFF]">
-                    {tpl.tag}
-                  </span>
-                  <h3 className="mt-2 text-base font-semibold text-white">{tpl.title}</h3>
-                  <p className="mt-1 text-xs text-white/45">{tpl.fields} fields</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      <Features />
 
       {/* workspace / client profiles */}
       <section id="workspace" className="border-t border-white/5 py-24">
