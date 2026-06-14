@@ -223,6 +223,42 @@ export async function sendPortalLinkEmail(opts: {
   return data;
 }
 
+export async function sendAutomationEmail(opts: {
+  to: string;
+  subject: string;
+  body: string;
+}) {
+  const { apiKey, fromEmail } = getEmailConfig();
+  const text = opts.body;
+  const htmlContent = `
+    <div style="font-family: Manrope, system-ui, sans-serif; max-width: 560px; margin: 0 auto; color: #111; white-space: pre-wrap;">${escapeHtml(opts.body)}</div>
+  `;
+
+  // Always write simulation email log to public outbox
+  const previewUrl = await simulateEmail(opts.to, opts.subject, htmlContent);
+
+  if (!apiKey || !fromEmail) {
+    console.warn("Email is not configured. Simulated automation email locally.");
+    return { simulated: true, previewUrl };
+  }
+
+  const resend = new Resend(apiKey);
+  const { data, error } = await resend.emails.send({
+    from: fromEmail,
+    to: opts.to,
+    subject: opts.subject,
+    text,
+    html: htmlContent,
+  });
+
+  if (error) {
+    console.error("Failed to send automation email:", error.message);
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")

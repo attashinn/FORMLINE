@@ -228,6 +228,23 @@ export const createClient = createServerFn({ method: "POST" })
       `;
     }
 
+    try {
+      const { executeAutomationsForEvent } = await import("./automations.functions");
+      await executeAutomationsForEvent({
+        ownerId: context.userId,
+        trigger: "trigger_new_client",
+        payload: {
+          clientId: String(client.id),
+          clientName: String(client.full_name),
+          clientEmail: String(client.email),
+          clientCompany: String(client.company),
+          status: String(client.status),
+        },
+      });
+    } catch (e) {
+      console.error("Automation execution error for new client trigger:", e);
+    }
+
     return hydrateClient(client);
   });
 
@@ -302,6 +319,26 @@ export const updateClient = createServerFn({ method: "POST" })
         INSERT INTO client_activity (client_id, label, kind)
         VALUES (${data.id}, ${activityLabel}, ${kind})
       `;
+    }
+
+    if (data.patch.status && data.patch.status !== current.status) {
+      try {
+        const { executeAutomationsForEvent } = await import("./automations.functions");
+        await executeAutomationsForEvent({
+          ownerId: context.userId,
+          trigger: "trigger_status_change",
+          payload: {
+            clientId: data.id,
+            newStatus: data.patch.status,
+            oldStatus: String(current.status),
+            clientName: String(current.fullName),
+            clientEmail: String(current.email),
+            clientCompany: String(current.company),
+          },
+        });
+      } catch (e) {
+        console.error("Automation execution error for status change:", e);
+      }
     }
 
     return hydrateClient(rows[0] as Record<string, unknown>);

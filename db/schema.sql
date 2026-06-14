@@ -100,3 +100,19 @@ CREATE TABLE IF NOT EXISTS client_tasks (
 
 CREATE INDEX IF NOT EXISTS client_tasks_client_id_idx ON client_tasks (client_id);
 
+CREATE TABLE IF NOT EXISTS automations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id UUID NOT NULL,
+  name TEXT NOT NULL DEFAULT 'Untitled Automation',
+  description TEXT NOT NULL DEFAULT '',
+  enabled BOOLEAN NOT NULL DEFAULT false,
+  nodes JSONB NOT NULL DEFAULT '[]'::jsonb,
+  connections JSONB NOT NULL DEFAULT '[]'::jsonb,
+  runs INTEGER NOT NULL DEFAULT 0,
+  last_run TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS automations_owner_id_idx ON automations (owner_id);
+CREATE INDEX IF NOT EXISTS automations_owner_enabled_idx ON automations (owner_id, enabled);

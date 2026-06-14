@@ -315,6 +315,23 @@ export const submitPublicForm = createServerFn({ method: "POST" })
     `;
 
     try {
+      const { executeAutomationsForEvent } = await import("./automations.functions");
+      await executeAutomationsForEvent({
+        ownerId: String(form.owner_id),
+        trigger: "trigger_form_submit",
+        payload: {
+          formId: String(form.id),
+          formTitle: form.title,
+          submitterEmail: data.submitter_email,
+          submitterName: data.submitter_name,
+          answers: data.data,
+        },
+      });
+    } catch (e) {
+      console.error("Automation execution error for form submit:", e);
+    }
+
+    try {
       const userListResult = await clerkClient().users.getUserList();
       const users = Array.isArray(userListResult) ? userListResult : userListResult.data || [];
       const ownerUser = users.find((u) => getDeterministicUuid(u.id) === form.owner_id);

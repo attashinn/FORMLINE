@@ -24,6 +24,7 @@ import { Route as AuthenticatedAutomationsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedFormsIndexRouteImport } from './routes/_authenticated/forms.index'
 import { Route as AuthenticatedClientsIndexRouteImport } from './routes/_authenticated/clients.index'
+import { Route as ApiCronWeeklySummaryRouteImport } from './routes/api.cron.weekly-summary'
 import { Route as AuthenticatedFormsIdRouteImport } from './routes/_authenticated/forms.$id'
 import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients.$id'
 
@@ -103,6 +104,11 @@ const AuthenticatedClientsIndexRoute =
     path: '/clients/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiCronWeeklySummaryRoute = ApiCronWeeklySummaryRouteImport.update({
+  id: '/api/cron/weekly-summary',
+  path: '/api/cron/weekly-summary',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedFormsIdRoute = AuthenticatedFormsIdRouteImport.update({
   id: '/forms/$id',
   path: '/forms/$id',
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/portal/$token': typeof PortalTokenRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/forms/$id': typeof AuthenticatedFormsIdRoute
+  '/api/cron/weekly-summary': typeof ApiCronWeeklySummaryRoute
   '/clients/': typeof AuthenticatedClientsIndexRoute
   '/forms/': typeof AuthenticatedFormsIndexRoute
 }
@@ -147,6 +154,7 @@ export interface FileRoutesByTo {
   '/portal/$token': typeof PortalTokenRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/forms/$id': typeof AuthenticatedFormsIdRoute
+  '/api/cron/weekly-summary': typeof ApiCronWeeklySummaryRoute
   '/clients': typeof AuthenticatedClientsIndexRoute
   '/forms': typeof AuthenticatedFormsIndexRoute
 }
@@ -167,6 +175,7 @@ export interface FileRoutesById {
   '/portal/$token': typeof PortalTokenRoute
   '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
   '/_authenticated/forms/$id': typeof AuthenticatedFormsIdRoute
+  '/api/cron/weekly-summary': typeof ApiCronWeeklySummaryRoute
   '/_authenticated/clients/': typeof AuthenticatedClientsIndexRoute
   '/_authenticated/forms/': typeof AuthenticatedFormsIndexRoute
 }
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/portal/$token'
     | '/clients/$id'
     | '/forms/$id'
+    | '/api/cron/weekly-summary'
     | '/clients/'
     | '/forms/'
   fileRoutesByTo: FileRoutesByTo
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/portal/$token'
     | '/clients/$id'
     | '/forms/$id'
+    | '/api/cron/weekly-summary'
     | '/clients'
     | '/forms'
   id:
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
     | '/portal/$token'
     | '/_authenticated/clients/$id'
     | '/_authenticated/forms/$id'
+    | '/api/cron/weekly-summary'
     | '/_authenticated/clients/'
     | '/_authenticated/forms/'
   fileRoutesById: FileRoutesById
@@ -234,6 +246,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   FTokenRoute: typeof FTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
+  ApiCronWeeklySummaryRoute: typeof ApiCronWeeklySummaryRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -343,6 +356,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/cron/weekly-summary': {
+      id: '/api/cron/weekly-summary'
+      path: '/api/cron/weekly-summary'
+      fullPath: '/api/cron/weekly-summary'
+      preLoaderRoute: typeof ApiCronWeeklySummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/forms/$id': {
       id: '/_authenticated/forms/$id'
       path: '/forms/$id'
@@ -399,6 +419,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   FTokenRoute: FTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
+  ApiCronWeeklySummaryRoute: ApiCronWeeklySummaryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

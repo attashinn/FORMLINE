@@ -7,6 +7,16 @@ import {
   Settings, BarChart3, ClipboardList, Sparkles,
 } from "@/components/heroicons";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  listAutomations,
+  createAutomation,
+  updateAutomation,
+  deleteAutomation,
+  toggleAutomation,
+} from "@/lib/automations.functions";
+import { listForms } from "@/lib/forms.functions";
 
 export const Route = createFileRoute("/_authenticated/automations")({
   head: () => ({
@@ -31,7 +41,7 @@ type NodeDef = {
   bg: string;
 };
 
-type CanvasNode = { id: string; kind: string; x: number; y: number };
+type CanvasNode = { id: string; kind: string; x: number; y: number; config?: Record<string, any> };
 type Connection  = { id: string; from: string; to: string };
 
 type Automation = {
@@ -106,61 +116,7 @@ function bezier(from: CanvasNode, to: CanvasNode) {
 }
 
 /* ─────────────────────────── Initial data ──────────────────────────── */
-
-const NOW = Date.now();
-
-const INITIAL: Automation[] = [
-  {
-    id: "a1", name: "Welcome New Clients",
-    description: "Send a welcome email when a form is submitted",
-    enabled: true, runs: 47, lastRun: new Date(NOW - 2 * 3600000).toISOString(),
-    nodes: [
-      { id: "n1", kind: "trigger_form_submit", x: 80,  y: 120 },
-      { id: "n2", kind: "action_send_email",   x: 380, y: 120 },
-    ],
-    connections: [{ id: "c1", from: "n1", to: "n2" }],
-  },
-  {
-    id: "a2", name: "Auto-Convert Leads",
-    description: "Convert form responses to clients automatically",
-    enabled: false, runs: 12, lastRun: new Date(NOW - 86400000).toISOString(),
-    nodes: [
-      { id: "n1", kind: "trigger_form_submit",  x: 60,  y: 130 },
-      { id: "n2", kind: "action_create_client", x: 360, y: 130 },
-      { id: "n3", kind: "action_send_email",    x: 660, y: 130 },
-    ],
-    connections: [
-      { id: "c1", from: "n1", to: "n2" },
-      { id: "c2", from: "n2", to: "n3" },
-    ],
-  },
-  {
-    id: "a3", name: "Status Change Notifier",
-    description: "Get notified when a client's status changes",
-    enabled: true, runs: 23, lastRun: new Date(NOW - 6 * 3600000).toISOString(),
-    nodes: [
-      { id: "n1", kind: "trigger_status_change", x: 60,  y: 140 },
-      { id: "n2", kind: "condition_if",           x: 360, y: 140 },
-      { id: "n3", kind: "action_send_email",      x: 660, y: 70  },
-      { id: "n4", kind: "action_notify",          x: 660, y: 210 },
-    ],
-    connections: [
-      { id: "c1", from: "n1", to: "n2" },
-      { id: "c2", from: "n2", to: "n3" },
-      { id: "c3", from: "n2", to: "n4" },
-    ],
-  },
-  {
-    id: "a4", name: "Weekly Summary",
-    description: "Send a workspace digest every Monday",
-    enabled: false, runs: 8, lastRun: new Date(NOW - 7 * 86400000).toISOString(),
-    nodes: [
-      { id: "n1", kind: "trigger_schedule",  x: 80,  y: 120 },
-      { id: "n2", kind: "action_send_email", x: 380, y: 120 },
-    ],
-    connections: [{ id: "c1", from: "n1", to: "n2" }],
-  },
-];
+// Mock data removed. Now loading automations dynamically from database.
 
 /* ─────────────────────── Mini-canvas preview ───────────────────────── */
 
@@ -227,7 +183,7 @@ function MiniPreview({ nodes, connections, enabled }: { nodes: CanvasNode[]; con
 
 /* ─────────────────────────── Canvas Editor ─────────────────────────── */
 
-function Canvas({ auto, onChange }: { auto: Automation; onChange: (a: Automation) => void }) {
+function Canvas({ auto, onChange, forms }: { auto: Automation; onChange: (a: Automation) => void; forms?: any[] }) {
   const [nodes,      setNodes]      = useState<CanvasNode[]>(auto.nodes);
   const [conns,      setConns]      = useState<Connection[]>(auto.connections);
   const [selId,      setSelId]      = useState<string | null>(null);
@@ -238,8 +194,14 @@ function Canvas({ auto, onChange }: { auto: Automation; onChange: (a: Automation
   const selNode = nodes.find(n => n.id === selId) ?? null;
   const selDef  = selNode ? getDef(selNode.kind) : null;
 
+  function updateNodeConfig(nodeId: string, patch: Record<string, any>) {
+    const nxt = nodes.map(n => n.id === nodeId ? { ...n, config: { ...(n.config || {}), ...patch } } : n);
+    setNodes(nxt);
+    onChange({ ...auto, nodes: nxt, connections: conns });
+  }
+
   function addNode(kind: string) {
-    const n: CanvasNode = { id: `n-${Date.now()}`, kind, x: 80 + nodes.length * 30, y: 100 + (nodes.length % 4) * 90 };
+    const n: CanvasNode = { id: `n-${Date.now()}`, kind, x: 80 + nodes.length * 30, y: 100 + (nodes.length % 4) * 90, config: {} };
     const nxt = [...nodes, n];
     setNodes(nxt); onChange({ ...auto, nodes: nxt, connections: conns });
     setShowPalette(false); // Auto close drawer on mobile
@@ -533,41 +495,134 @@ function Canvas({ auto, onChange }: { auto: Automation; onChange: (a: Automation
               {/* Trigger configs */}
               {selNode.kind === "trigger_form_submit" && (
                 <Field label="Watch form">
-                  <select className={INPUT}><option>Any form</option><option>Client Intake Form</option><option>Project Brief</option></select>
+                  <select
+                    value={selNode.config?.formId || "any"}
+                    onChange={e => updateNodeConfig(selNode.id, { formId: e.target.value })}
+                    className={INPUT}
+                  >
+                    <option value="any">Any form</option>
+                    {forms?.map(f => (
+                      <option key={f.id} value={f.id}>{f.title}</option>
+                    ))}
+                  </select>
                 </Field>
               )}
               {selNode.kind === "trigger_schedule" && (
                 <Field label="Schedule">
-                  <select className={INPUT}><option>Every Monday 9am</option><option>Daily at 9am</option><option>Every hour</option><option>Custom (cron)</option></select>
+                  <select
+                    value={selNode.config?.schedule || "weekly"}
+                    onChange={e => updateNodeConfig(selNode.id, { schedule: e.target.value })}
+                    className={INPUT}
+                  >
+                    <option value="weekly">Every Monday 9am</option>
+                    <option value="daily">Daily at 9am</option>
+                    <option value="hourly">Every hour</option>
+                    <option value="cron">Custom (cron)</option>
+                  </select>
                 </Field>
               )}
               {selNode.kind === "trigger_status_change" && (
                 <Field label="New status">
-                  <select className={INPUT}><option>Any change</option><option>→ New</option><option>→ In Progress</option><option>→ Completed</option></select>
+                  <select
+                    value={selNode.config?.status || "any"}
+                    onChange={e => updateNodeConfig(selNode.id, { status: e.target.value })}
+                    className={INPUT}
+                  >
+                    <option value="any">Any change</option>
+                    <option value="New">→ New</option>
+                    <option value="In Progress">→ In Progress</option>
+                    <option value="Completed">→ Completed</option>
+                  </select>
                 </Field>
               )}
 
               {/* Action configs */}
               {selNode.kind === "action_send_email" && (<>
-                <Field label="To"><input type="text" placeholder="{{client.email}}" className={INPUT} /></Field>
-                <Field label="Subject"><input type="text" placeholder="Welcome to Formline" className={INPUT} /></Field>
+                <Field label="To">
+                  <input
+                    type="text"
+                    placeholder="{{client.email}}"
+                    value={selNode.config?.to || ""}
+                    onChange={e => updateNodeConfig(selNode.id, { to: e.target.value })}
+                    className={INPUT}
+                  />
+                </Field>
+                <Field label="Subject">
+                  <input
+                    type="text"
+                    placeholder="Welcome to Formline"
+                    value={selNode.config?.subject || ""}
+                    onChange={e => updateNodeConfig(selNode.id, { subject: e.target.value })}
+                    className={INPUT}
+                  />
+                </Field>
                 <Field label="Body">
-                  <textarea rows={4} placeholder="Hi {{client.name}}, thanks for submitting..." className={`${INPUT} resize-none`} />
+                  <textarea
+                    rows={4}
+                    placeholder="Hi {{client.name}}, thanks for submitting..."
+                    value={selNode.config?.body || ""}
+                    onChange={e => updateNodeConfig(selNode.id, { body: e.target.value })}
+                    className={`${INPUT} h-auto py-2 resize-none`}
+                  />
                 </Field>
               </>)}
               {selNode.kind === "action_webhook" && (<>
-                <Field label="URL"><input type="url" placeholder="https://hooks.example.com/..." className={INPUT} /></Field>
-                <Field label="Method">
-                  <select className={INPUT}><option>POST</option><option>GET</option><option>PUT</option><option>PATCH</option></select>
+                <Field label="URL">
+                  <input
+                    type="url"
+                    placeholder="https://hooks.example.com/..."
+                    value={selNode.config?.url || ""}
+                    onChange={e => updateNodeConfig(selNode.id, { url: e.target.value })}
+                    className={INPUT}
+                  />
                 </Field>
-                <Field label="Auth token (optional)"><input type="text" placeholder="Bearer …" className={INPUT} /></Field>
+                <Field label="Method">
+                  <select
+                    value={selNode.config?.method || "POST"}
+                    onChange={e => updateNodeConfig(selNode.id, { method: e.target.value })}
+                    className={INPUT}
+                  >
+                    <option value="POST">POST</option>
+                    <option value="GET">GET</option>
+                    <option value="PUT">PUT</option>
+                    <option value="PATCH">PATCH</option>
+                  </select>
+                </Field>
+                <Field label="Auth token (optional)">
+                  <input
+                    type="text"
+                    placeholder="Bearer …"
+                    value={selNode.config?.authToken || ""}
+                    onChange={e => updateNodeConfig(selNode.id, { authToken: e.target.value })}
+                    className={INPUT}
+                  />
+                </Field>
               </>)}
               {selNode.kind === "action_update_status" && (
                 <Field label="Set status to">
-                  <select className={INPUT}><option>New</option><option>In Progress</option><option>Completed</option></select>
+                  <select
+                    value={selNode.config?.status || "In Progress"}
+                    onChange={e => updateNodeConfig(selNode.id, { status: e.target.value })}
+                    className={INPUT}
+                  >
+                    <option value="New">New</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                  </select>
                 </Field>
               )}
-              {(selNode.kind === "action_create_client" || selNode.kind === "action_notify" || selNode.kind === "trigger_new_client") && (
+              {selNode.kind === "action_notify" && (
+                <Field label="Notification Message">
+                  <input
+                    type="text"
+                    placeholder="Notification message..."
+                    value={selNode.config?.message || ""}
+                    onChange={e => updateNodeConfig(selNode.id, { message: e.target.value })}
+                    className={INPUT}
+                  />
+                </Field>
+              )}
+              {(selNode.kind === "action_create_client" || selNode.kind === "trigger_new_client") && (
                 <div className="rounded-xl bg-surface-muted/50 p-3 text-xs text-muted-foreground ring-1 ring-hairline">
                   ✦ This node runs automatically using data from upstream. No additional configuration needed.
                 </div>
@@ -576,12 +631,37 @@ function Canvas({ auto, onChange }: { auto: Automation; onChange: (a: Automation
               {/* Condition config */}
               {selNode.kind === "condition_if" && (<>
                 <Field label="Field">
-                  <select className={INPUT}><option>client.status</option><option>client.industry</option><option>submission.email</option></select>
+                  <select
+                    value={selNode.config?.field || "client.status"}
+                    onChange={e => updateNodeConfig(selNode.id, { field: e.target.value })}
+                    className={INPUT}
+                  >
+                    <option value="client.status">client.status</option>
+                    <option value="client.industry">client.industry</option>
+                    <option value="submission.email">submission.email</option>
+                  </select>
                 </Field>
                 <Field label="Operator">
-                  <select className={INPUT}><option>equals</option><option>contains</option><option>is not empty</option><option>is empty</option></select>
+                  <select
+                    value={selNode.config?.operator || "equals"}
+                    onChange={e => updateNodeConfig(selNode.id, { operator: e.target.value })}
+                    className={INPUT}
+                  >
+                    <option value="equals">equals</option>
+                    <option value="contains">contains</option>
+                    <option value="is not empty">is not empty</option>
+                    <option value="is empty">is empty</option>
+                  </select>
                 </Field>
-                <Field label="Value"><input type="text" placeholder="Completed" className={INPUT} /></Field>
+                <Field label="Value">
+                  <input
+                    type="text"
+                    placeholder="Completed"
+                    value={selNode.config?.value || ""}
+                    onChange={e => updateNodeConfig(selNode.id, { value: e.target.value })}
+                    className={INPUT}
+                  />
+                </Field>
               </>)}
             </div>
 
@@ -614,38 +694,142 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 /* ─────────────────────────── Main page ─────────────────────────────── */
 
 function AutomationsPage() {
-  const [autos,     setAutos]     = useState<Automation[]>(INITIAL);
+  const qc = useQueryClient();
+  const listAutosFn = useServerFn(listAutomations);
+  const createAutoFn = useServerFn(createAutomation);
+  const updateAutoFn = useServerFn(updateAutomation);
+  const deleteAutoFn = useServerFn(deleteAutomation);
+  const toggleAutoFn = useServerFn(toggleAutomation);
+  const getForms = useServerFn(listForms);
+
+  const { data: autos = [], isLoading } = useQuery({
+    queryKey: ["automations"],
+    queryFn: () => listAutosFn(),
+  });
+
+  const { data: forms = [] } = useQuery({
+    queryKey: ["forms"],
+    queryFn: () => getForms(),
+  });
+
   const [editId,    setEditId]    = useState<string | null>(null);
   const [editName,  setEditName]  = useState("");
+  const [editingLocal, setEditingLocal] = useState<Automation | null>(null);
 
-  const editing = autos.find(a => a.id === editId) ?? null;
+  const editing = editingLocal;
+
+  const createMut = useMutation({
+    mutationFn: async () => {
+      return createAutoFn({
+        data: {
+          name: "Untitled Automation",
+          description: "New workflow",
+          enabled: false,
+          nodes: [],
+          connections: [],
+        },
+      });
+    },
+    onSuccess: (newAuto) => {
+      qc.invalidateQueries({ queryKey: ["automations"] });
+      setEditId(newAuto.id);
+      setEditName(newAuto.name);
+      setEditingLocal(newAuto);
+      toast.success("Automation created");
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to create automation");
+    }
+  });
+
+  const saveMut = useMutation({
+    mutationFn: async (updated: Automation) => {
+      await updateAutoFn({
+        data: {
+          id: updated.id,
+          name: updated.name,
+          description: updated.description,
+          enabled: updated.enabled,
+          nodes: updated.nodes,
+          connections: updated.connections,
+        },
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["automations"] });
+      toast.success("Automation saved");
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to save automation");
+    }
+  });
+
+  const toggleMut = useMutation({
+    mutationFn: async (id: string) => {
+      await toggleAutoFn({ data: { id } });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["automations"] });
+      toast.success("Automation updated");
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to toggle automation");
+    }
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      await deleteAutoFn({ data: { id } });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["automations"] });
+      toast.success("Automation deleted");
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to delete automation");
+    }
+  });
 
   function newAuto() {
-    const id = `a-${Date.now()}`;
-    const a: Automation = { id, name: "Untitled Automation", description: "New workflow", enabled: false, nodes: [], connections: [], runs: 0, lastRun: null };
-    setAutos(prev => [a, ...prev]);
-    setEditId(id); setEditName(a.name);
+    createMut.mutate();
   }
 
   function toggle(id: string) {
-    setAutos(prev => prev.map(a => a.id === id ? { ...a, enabled: !a.enabled } : a));
-    toast.success("Automation updated");
+    if (editingLocal && editingLocal.id === id) {
+      setEditingLocal({ ...editingLocal, enabled: !editingLocal.enabled });
+    }
+    toggleMut.mutate(id);
   }
 
   function del(id: string) {
-    setAutos(prev => prev.filter(a => a.id !== id));
-    if (editId === id) setEditId(null);
-    toast.success("Automation deleted");
+    if (editId === id) {
+      setEditId(null);
+      setEditingLocal(null);
+    }
+    deleteMut.mutate(id);
   }
 
   function saveChange(updated: Automation) {
-    setAutos(prev => prev.map(a => a.id === updated.id ? updated : a));
+    setEditingLocal(updated);
   }
 
   function closeEditor() {
-    if (editId && editName.trim()) setAutos(prev => prev.map(a => a.id === editId ? { ...a, name: editName } : a));
+    if (editingLocal) {
+      saveMut.mutate({
+        ...editingLocal,
+        name: editName,
+      });
+    }
     setEditId(null);
-    toast.success("Automation saved");
+    setEditingLocal(null);
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="size-8 animate-spin text-[#7C5CFF]" />
+      </div>
+    );
   }
 
   /* ── Editor ── */
@@ -678,7 +862,7 @@ function AutomationsPage() {
         </div>
       </header>
       <div className="flex-1 overflow-hidden">
-        <Canvas auto={editing} onChange={saveChange} />
+        <Canvas auto={editing} onChange={saveChange} forms={forms} />
       </div>
     </div>
   );
@@ -896,20 +1080,22 @@ function AutomationsPage() {
                   <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{tmpl.desc}</p>
                 </div>
                 <button
-                  onClick={() => {
-                    const id = `a-tmpl-${Date.now()}-${index}`;
-                    const customAuto: Automation = {
-                      id,
-                      name: tmpl.title,
-                      description: tmpl.desc,
-                      enabled: false,
-                      nodes: tmpl.nodes,
-                      connections: tmpl.connections,
-                      runs: 0,
-                      lastRun: null
-                    };
-                    setAutos(prev => [customAuto, ...prev]);
-                    toast.success(`Created workflow from template: ${tmpl.title}`);
+                  onClick={async () => {
+                    try {
+                      await createAutoFn({
+                        data: {
+                          name: tmpl.title,
+                          description: tmpl.desc,
+                          enabled: false,
+                          nodes: tmpl.nodes,
+                          connections: tmpl.connections,
+                        },
+                      });
+                      qc.invalidateQueries({ queryKey: ["automations"] });
+                      toast.success(`Created workflow from template: ${tmpl.title}`);
+                    } catch (err: any) {
+                      toast.error(err.message || "Failed to create workflow from blueprint");
+                    }
                   }}
                   className="mt-6 w-full flex items-center justify-center gap-1.5 h-8.5 rounded-xl bg-surface-muted hover:bg-[#7C5CFF]/10 hover:text-white hover:border-[#7C5CFF]/20 text-xs font-semibold text-foreground transition-all border border-hairline"
                 >
