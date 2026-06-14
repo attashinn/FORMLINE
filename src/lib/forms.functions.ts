@@ -315,7 +315,7 @@ export const submitPublicForm = createServerFn({ method: "POST" })
     `;
 
     try {
-      const { executeAutomationsForEvent } = await import("./automations.functions");
+      const { executeAutomationsForEvent } = await import("./automations.server");
       await executeAutomationsForEvent({
         ownerId: String(form.owner_id),
         trigger: "trigger_form_submit",

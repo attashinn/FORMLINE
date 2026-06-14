@@ -229,7 +229,7 @@ export const createClient = createServerFn({ method: "POST" })
     }
 
     try {
-      const { executeAutomationsForEvent } = await import("./automations.functions");
+      const { executeAutomationsForEvent } = await import("./automations.server");
       await executeAutomationsForEvent({
         ownerId: context.userId,
         trigger: "trigger_new_client",
@@ -323,7 +323,7 @@ export const updateClient = createServerFn({ method: "POST" })
 
     if (data.patch.status && data.patch.status !== current.status) {
       try {
-        const { executeAutomationsForEvent } = await import("./automations.functions");
+        const { executeAutomationsForEvent } = await import("./automations.server");
         await executeAutomationsForEvent({
           ownerId: context.userId,
           trigger: "trigger_status_change",
