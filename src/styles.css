@@ -247,3 +247,13 @@
 .cl-card {
   background-color: #0a0a0b !important;
 }
+
+@keyframes flowDash {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+.animate-flow-dash {
+  animation: flowDash 0.8s linear infinite;
+}

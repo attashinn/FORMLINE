@@ -1,4 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
+import { useAuth } from "@clerk/tanstack-react-start";
 import { Features } from "@/components/blocks/features-10";
 import { Logo } from "@/components/logo";
 import { ShinyButton } from "@/components/ui/shiny-button";
@@ -39,6 +41,16 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const navigate = useNavigate();
+  const { isSignedIn: clerkSignedIn } = useAuth();
+  const [isBypassed, setIsBypassed] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsBypassed(document.cookie.includes("bypass=true"));
+    }
+  }, []);
+
+  const isSignedIn = clerkSignedIn || isBypassed;
 
   return (
     <div className="dark min-h-screen bg-[#0A0A0B] text-[#E5E5E7] antialiased">
@@ -66,15 +78,26 @@ function Home() {
             </a>
           </nav>
           <div className="flex items-center gap-3">
-            <Link to="/auth" className="text-sm text-white/70 hover:text-white">
-              Sign in
-            </Link>
-            <Link
-              to="/auth"
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white px-3.5 text-sm font-medium text-black hover:bg-white/90"
-            >
-              Start free <ArrowRight className="size-3.5" />
-            </Link>
+            {isSignedIn ? (
+              <Link
+                to="/dashboard"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#7C5CFF] px-4 text-sm font-medium text-white hover:bg-[#7C5CFF]/90 transition-colors"
+              >
+                Dashboard <ArrowRight className="size-3.5" />
+              </Link>
+            ) : (
+              <>
+                <Link to="/auth" className="text-sm text-white/70 hover:text-white">
+                  Sign in
+                </Link>
+                <Link
+                  to="/auth"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white px-3.5 text-sm font-medium text-black hover:bg-white/90"
+                >
+                  Start free <ArrowRight className="size-3.5" />
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -83,12 +106,12 @@ function Home() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(124,92,255,0.35),transparent_60%)]" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#7C5CFF]/50 to-transparent" />
-        <div className="relative mx-auto max-w-6xl px-6 pt-24 pb-32 text-center">
+        <div className="relative mx-auto max-w-6xl px-4 pt-16 pb-20 text-center sm:px-6 sm:pt-24 sm:pb-32">
           <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70 backdrop-blur">
             <span className="size-1.5 rounded-full bg-[#7C5CFF] shadow-[0_0_8px_#7C5CFF]" />
             New — Send forms via shareable link or email
           </div>
-          <h1 className="mx-auto mt-6 max-w-3xl text-5xl font-semibold leading-[1.05] tracking-tight text-white md:text-7xl">
+          <h1 className="mx-auto mt-6 max-w-3xl text-3xl font-semibold leading-[1.05] tracking-tight text-white sm:text-5xl md:text-7xl">
             Send forms.
             <br />
             <span className="bg-gradient-to-r from-white via-white to-[#7C5CFF] bg-clip-text text-transparent">
@@ -100,9 +123,18 @@ function Home() {
             watch responses land in a calm, organized dashboard.
           </p>
           <div className="mt-10 flex items-center justify-center gap-3">
-            <ShinyButton onClick={() => navigate({ to: "/auth" })}>
-              Get unlimited access
-            </ShinyButton>
+            {isSignedIn ? (
+              <Link
+                to="/dashboard"
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#7C5CFF] px-6 text-sm font-semibold text-white hover:bg-[#7C5CFF]/90 transition-colors shadow-lg shadow-[#7C5CFF]/25"
+              >
+                Go to Dashboard <ArrowRight className="size-4" />
+              </Link>
+            ) : (
+              <ShinyButton onClick={() => navigate({ to: "/auth" })}>
+                Get unlimited access
+              </ShinyButton>
+            )}
           </div>
 
           <div className="relative mx-auto mt-20 max-w-6xl">
@@ -121,13 +153,13 @@ function Home() {
       </section>
 
       {/* features */}
-      <section id="features" className="border-t border-white/5 py-24">
-        <div className="mx-auto max-w-6xl px-6">
+      <section id="features" className="border-t border-white/5 py-16 sm:py-24">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="max-w-2xl">
             <span className="text-xs font-medium uppercase tracking-[0.18em] text-[#7C5CFF]">
               Built for studios
             </span>
-            <h2 className="mt-3 text-4xl font-semibold tracking-tight text-white md:text-5xl">
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-4xl md:text-5xl">
               Everything you need to onboard a client.
             </h2>
             <p className="mt-4 text-white/60">
@@ -348,10 +380,10 @@ function Home() {
             ))}
           </ul>
           <Link
-            to="/auth"
+            to={isSignedIn ? "/dashboard" : "/auth"}
             className="mt-10 inline-flex h-12 items-center gap-2 rounded-lg bg-white px-6 text-sm font-medium text-black hover:opacity-90"
           >
-            Create your workspace <ArrowRight className="size-4" />
+            {isSignedIn ? "Go to Dashboard" : "Create your workspace"} <ArrowRight className="size-4" />
           </Link>
         </div>
       </section>

@@ -3,7 +3,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { SiteHeader } from "@/components/site-header";
 import { createForm, deleteForm, listForms } from "@/lib/forms.functions";
 import { FORM_TEMPLATES, type FormTemplate } from "@/lib/form-templates";
 import { ArrowUpRight, Plus, Trash2, FileText, Sparkles } from "@/components/heroicons";
@@ -74,16 +73,15 @@ function FormsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteHeader />
-      <main className="mx-auto max-w-5xl px-6 py-12">
+      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-10 flex items-end justify-between"
+          className="mb-8 sm:mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
         >
           <div>
-            <h1 className="font-serif text-5xl">Forms</h1>
+            <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl">Forms</h1>
             <p className="mt-2 text-muted-foreground">Build, share, and collect responses.</p>
           </div>
           <button
@@ -104,7 +102,7 @@ function FormsPage() {
             <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Form title
             </label>
-            <div className="mt-2 flex gap-2">
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row">
               <input
                 autoFocus
                 value={title}
@@ -112,22 +110,24 @@ function FormsPage() {
                 placeholder="e.g. Client intake questionnaire"
                 className="h-10 flex-1 rounded-lg bg-surface px-3 text-sm ring-1 ring-hairline focus:outline-none focus:ring-2 focus:ring-foreground/80"
               />
-              <button
-                disabled={!title.trim() || createMut.isPending}
-                onClick={() => createBlank(title.trim())}
-                className="inline-flex h-10 items-center rounded-lg bg-foreground px-4 text-sm font-medium text-background disabled:opacity-50"
-              >
-                Create
-              </button>
-              <button
-                onClick={() => {
-                  setCreating(false);
-                  setTitle("");
-                }}
-                className="inline-flex h-10 items-center rounded-lg bg-surface px-4 text-sm ring-1 ring-hairline"
-              >
-                Cancel
-              </button>
+              <div className="flex gap-2">
+                <button
+                  disabled={!title.trim() || createMut.isPending}
+                  onClick={() => createBlank(title.trim())}
+                  className="inline-flex h-10 flex-1 sm:flex-none items-center justify-center rounded-lg bg-foreground px-4 text-sm font-medium text-background disabled:opacity-50"
+                >
+                  Create
+                </button>
+                <button
+                  onClick={() => {
+                    setCreating(false);
+                    setTitle("");
+                  }}
+                  className="inline-flex h-10 items-center rounded-lg bg-surface px-4 text-sm ring-1 ring-hairline"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </motion.div>
         )}

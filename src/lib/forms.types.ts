@@ -31,6 +31,8 @@ export type FormRecord = {
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
 
+export type SubmissionStatus = "New" | "Reviewed" | "Converted" | "Archived";
+
 export type SubmissionRecord = {
   id: string;
   form_id: string;
@@ -38,4 +40,6 @@ export type SubmissionRecord = {
   submitter_name: string | null;
   submitter_email: string | null;
   submitted_at: string;
+  status: SubmissionStatus;
+  converted_client_id: string | null;
 };

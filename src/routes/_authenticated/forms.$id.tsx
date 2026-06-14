@@ -3,7 +3,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type DragEvent } from "react";
 import { motion } from "framer-motion";
-import { SiteHeader } from "@/components/site-header";
 import {
   Select,
   SelectContent,
@@ -22,25 +21,38 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { deleteSubmission, getForm, sendFormLinkEmail, updateForm } from "@/lib/forms.functions";
-import type { FieldType, FormField } from "@/lib/forms.types";
+import {
+  deleteSubmission,
+  getForm,
+  sendFormLinkEmail,
+  updateForm,
+  updateSubmissionStatus,
+  convertSubmissionToClient,
+} from "@/lib/forms.functions";
+import type { FieldType, FormField, SubmissionStatus } from "@/lib/forms.types";
 import {
   AlignLeft,
   ArrowDown,
   ArrowLeft,
   ArrowUp,
+  ArrowUpRight,
   Calendar,
+  Check,
+  ChevronDown,
   Copy,
   GripVertical,
   Hash,
   ListChecks,
+  Loader2,
   Mail,
   Phone,
   Plus,
   Save,
+  Sparkles,
   TextCursorInput,
   ToggleLeft,
   Trash2,
+  Users,
 } from "@/components/heroicons";
 import { toast } from "sonner";
 
@@ -85,6 +97,21 @@ const FIELD_TYPE_META = {
 function rid() {
   return "f_" + Math.random().toString(36).slice(2, 9);
 }
+
+const getStatusStyles = (status: SubmissionStatus) => {
+  switch (status) {
+    case "New":
+      return "bg-blue-500/10 text-blue-600 dark:text-blue-400 ring-blue-500/25";
+    case "Reviewed":
+      return "bg-purple-500/10 text-purple-600 dark:text-purple-400 ring-purple-500/25";
+    case "Converted":
+      return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-emerald-500/25";
+    case "Archived":
+      return "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 ring-zinc-500/25";
+    default:
+      return "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 ring-zinc-500/25";
+  }
+};
 
 function FormDetail() {
   const { id } = Route.useParams();
@@ -153,10 +180,32 @@ function FormDetail() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to send email"),
   });
 
+  const updateStatus = useServerFn(updateSubmissionStatus);
+  const convertSub = useServerFn(convertSubmissionToClient);
+
+  const updateStatusMut = useMutation({
+    mutationFn: async ({ sid, status }: { sid: string; status: SubmissionStatus }) =>
+      updateStatus({ data: { id: sid, status } }),
+    onSuccess: () => {
+      toast.success("Status updated");
+      qc.invalidateQueries({ queryKey: ["form", id] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to update status"),
+  });
+
+  const convertMut = useMutation({
+    mutationFn: async (sid: string) => convertSub({ data: { id: sid } }),
+    onSuccess: () => {
+      toast.success("Converted to client profile");
+      qc.invalidateQueries({ queryKey: ["form", id] });
+      qc.invalidateQueries({ queryKey: ["clients"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to convert client"),
+  });
+
   if (isLoading || !data) {
     return (
       <div className="min-h-screen bg-background">
-        <SiteHeader />
         <main className="mx-auto max-w-4xl px-6 py-12 text-muted-foreground">Loading…</main>
       </div>
     );
@@ -222,8 +271,7 @@ function FormDetail() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteHeader />
-      <main className="mx-auto max-w-4xl px-6 py-10">
+      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
         <Link
           to="/forms"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -235,7 +283,7 @@ function FormDetail() {
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="flex-1 bg-transparent font-serif text-4xl outline-none focus:ring-0"
+            className="flex-1 bg-transparent font-serif text-2xl sm:text-3xl md:text-4xl outline-none focus:ring-0"
           />
           <div className="flex items-center gap-2">
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -515,31 +563,120 @@ function FormDetail() {
                 </p>
               </div>
             ) : (
-              <ul className="space-y-3">
-                {data.submissions.map((s) => (
-                  <li key={s.id} className="rounded-2xl bg-surface p-5 ring-1 ring-hairline">
-                    <div className="mb-3 flex items-center justify-between">
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(s.submitted_at).toLocaleString()}{" "}
-                        {s.submitter_email && `· ${s.submitter_email}`}
-                      </div>
-                      <button
-                        onClick={() => delSubMut.mutate(s.id)}
-                        className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
-                    </div>
-                    <dl className="grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
-                      {fields.map((f) => (
-                        <div key={f.id} className="border-b border-hairline pb-1.5">
-                          <dt className="text-xs text-muted-foreground">{f.label}</dt>
-                          <dd className="font-medium">{String(s.data[f.id] ?? "—")}</dd>
+              <ul className="space-y-4">
+                {data.submissions.map((s) => {
+                  const isConverting = convertMut.isPending && convertMut.variables === s.id;
+                  const isUpdatingStatus =
+                    updateStatusMut.isPending && updateStatusMut.variables?.sid === s.id;
+                  const isConverted = s.status === "Converted" || !!s.converted_client_id;
+                  const submitterDisplayName =
+                    s.submitter_name || s.submitter_email || "Anonymous Submitter";
+
+                  return (
+                    <li
+                      key={s.id}
+                      className="relative overflow-hidden rounded-2xl bg-surface p-5 ring-1 ring-hairline transition-all hover:-translate-y-0.5 hover:ring-foreground/20 hover:shadow-lg"
+                    >
+                      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-hairline pb-4">
+                        <div>
+                          <h4 className="font-serif text-lg font-medium text-foreground">
+                            {submitterDisplayName}
+                          </h4>
+                          <div className="mt-1 text-xs text-muted-foreground flex items-center gap-1.5">
+                            <Calendar className="size-3.5" />
+                            {new Date(s.submitted_at).toLocaleString()}
+                            {s.submitter_name && s.submitter_email && (
+                              <>
+                                <span>·</span>
+                                <span>{s.submitter_email}</span>
+                              </>
+                            )}
+                          </div>
                         </div>
-                      ))}
-                    </dl>
-                  </li>
-                ))}
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="relative">
+                            <select
+                              value={s.status}
+                              onChange={(e) =>
+                                updateStatusMut.mutate({
+                                  sid: s.id,
+                                  status: e.target.value as SubmissionStatus,
+                                })
+                              }
+                              disabled={isUpdatingStatus}
+                              className={`h-8 rounded-lg pl-2 pr-6 text-xs font-semibold ring-1 focus:outline-none cursor-pointer appearance-none transition-all ${getStatusStyles(
+                                s.status,
+                              )}`}
+                            >
+                              <option value="New" className="bg-background text-foreground">
+                                New
+                              </option>
+                              <option value="Reviewed" className="bg-background text-foreground">
+                                Reviewed
+                              </option>
+                              <option value="Converted" className="bg-background text-foreground">
+                                Converted
+                              </option>
+                              <option value="Archived" className="bg-background text-foreground">
+                                Archived
+                              </option>
+                            </select>
+                            <ChevronDown className="absolute right-1.5 top-1/2 size-3 -translate-y-1/2 pointer-events-none text-current" />
+                          </div>
+
+                          {isConverted ? (
+                            <Link
+                              to="/clients/$id"
+                              params={{ id: s.converted_client_id || "" }}
+                              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 text-xs font-semibold ring-1 ring-emerald-500/25 hover:bg-emerald-500/20 transition-colors"
+                            >
+                              <Users className="size-3.5" />
+                              View Profile
+                              <ArrowUpRight className="size-3" />
+                            </Link>
+                          ) : (
+                            <button
+                              onClick={() => convertMut.mutate(s.id)}
+                              disabled={isConverting}
+                              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-foreground text-background px-3 text-xs font-semibold hover:bg-foreground/90 transition-colors disabled:opacity-50"
+                            >
+                              {isConverting ? (
+                                <Loader2 className="size-3.5 animate-spin" />
+                              ) : (
+                                <Sparkles className="size-3.5" />
+                              )}
+                              {isConverting ? "Converting…" : "Convert to Client"}
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => delSubMut.mutate(s.id)}
+                            disabled={delSubMut.isPending}
+                            className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                            aria-label="Delete response"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+                        {fields.map((f) => (
+                          <div
+                            key={f.id}
+                            className="group/item rounded-xl bg-surface-muted/50 p-2.5 transition-colors hover:bg-surface-muted/80"
+                          >
+                            <dt className="text-xs font-medium text-muted-foreground">{f.label}</dt>
+                            <dd className="mt-1 font-medium text-foreground">
+                              {String(s.data[f.id] ?? "—")}
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>

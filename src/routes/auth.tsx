@@ -5,7 +5,7 @@ import { Logo } from "@/components/logo";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 
 const authProps = {
-  routing: "virtual" as const,
+  routing: "hash" as const,
   signInUrl: "/auth",
   signUpUrl: "/auth",
   fallbackRedirectUrl: "/dashboard",

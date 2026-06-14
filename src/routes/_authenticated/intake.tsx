@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, Paperclip, X } from "@/components/heroicons";
-import { SiteHeader } from "@/components/site-header";
 import { useClients, type ClientFile } from "@/lib/clients-store";
 import { toast } from "sonner";
 
@@ -183,23 +182,27 @@ function Intake() {
     setDraft((d) => ({ ...d, files: [...d.files, ...incoming] }));
   }
 
-  function submit() {
-    const record = addClient(draft);
-    localStorage.removeItem(DRAFT_KEY);
-    toast.success(`${record.company} added to your workspace`);
-    navigate({ to: "/clients/$id", params: { id: record.id } });
+  async function submit() {
+    try {
+      const record = await addClient(draft);
+      localStorage.removeItem(DRAFT_KEY);
+      toast.success(`${record.company} added to your workspace`);
+      navigate({ to: "/clients/$id", params: { id: record.id } });
+    } catch (err) {
+      console.error(err);
+      const msg = err instanceof Error ? err.message : "Failed to add client. Please try again.";
+      toast.error(msg);
+    }
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteHeader />
-
-      <main className="mx-auto max-w-3xl px-6 py-12 lg:px-8 lg:py-16">
+      <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
         <header className="mb-10 text-center">
           <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             New engagement
           </span>
-          <h1 className="mt-3 font-serif text-5xl leading-tight">
+          <h1 className="mt-3 font-serif text-3xl leading-tight sm:text-4xl md:text-5xl">
             Client <span className="italic text-muted-foreground">intake</span>
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-pretty text-muted-foreground">
@@ -209,7 +212,7 @@ function Intake() {
         </header>
 
         {/* Progress */}
-        <div className="mb-8 flex items-center gap-3">
+        <div className="mb-8 flex items-center gap-2 sm:gap-3 overflow-x-auto pb-1">
           {STEPS.map((s, i) => (
             <div key={s.key} className="flex flex-1 items-center gap-3">
               <div
@@ -231,7 +234,7 @@ function Intake() {
           ))}
         </div>
 
-        <div className="rounded-3xl bg-surface p-8 ring-1 ring-hairline lg:p-10">
+        <div className="rounded-3xl bg-surface p-5 ring-1 ring-hairline sm:p-8 lg:p-10">
           <div className="mb-8 flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Step {String(step + 1).padStart(2, "0")} of {String(STEPS.length).padStart(2, "0")} ·{" "}
