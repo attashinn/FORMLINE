@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { Features } from "@/components/blocks/features-10";
+import { HeroLogoMarquee } from "@/components/hero-logo-marquee";
 import { LandingNavbar } from "@/components/landing-navbar";
 import { Logo } from "@/components/logo";
 import { ShinyButton } from "@/components/ui/shiny-button";
@@ -68,31 +69,47 @@ function Home() {
 
       <LandingNavbar isSignedIn={isSignedIn} />
 
-      {/* hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(124,92,255,0.35),transparent_60%)]" />
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#7C5CFF]/50 to-transparent" />
-        <div className="relative mx-auto max-w-6xl px-4 pt-16 pb-20 text-center sm:px-6 sm:pt-24 sm:pb-32">
-          <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70 backdrop-blur">
-            <span className="size-1.5 rounded-full bg-[#7C5CFF] shadow-[0_0_8px_#7C5CFF]" />
-            New — Send forms via shareable link or email
+      {/* hero — PrebuiltUI-style layout, Formline branding */}
+      <header className="relative flex flex-col items-center overflow-hidden">
+        {/* Side guide lines */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 bottom-0 flex justify-between px-4 md:px-16 lg:px-24 xl:px-32"
+        >
+          <div className="w-px bg-white/10" />
+          <div className="w-px bg-white/10" />
+        </div>
+
+        <div className="relative z-10 flex w-full flex-col items-center px-4 pt-16 pb-0 text-center sm:px-6 sm:pt-24 md:px-16 lg:px-24 xl:px-32">
+          {/* Badge */}
+          <div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/5 py-1.5 pl-2.5 pr-4">
+            <span className="relative flex size-3.5 items-center justify-center">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#7C5CFF] opacity-60 duration-700" />
+              <span className="relative inline-flex size-2 rounded-full bg-[#7C5CFF]" />
+            </span>
+            <p className="text-xs text-white/70 sm:text-sm">
+              Client intake for modern studios
+            </p>
           </div>
-          <h1 className="mx-auto mt-6 max-w-3xl text-3xl font-semibold leading-[1.05] tracking-tight text-white sm:text-5xl md:text-7xl">
+
+          {/* Headline */}
+          <h1 className="mt-8 max-w-2xl bg-gradient-to-r from-white via-white to-white/45 bg-clip-text text-4xl leading-tight font-semibold tracking-tight text-transparent sm:text-5xl md:text-[4rem]/[1.1]">
             Send forms.
             <br />
-            <span className="bg-gradient-to-r from-white via-white to-[#7C5CFF] bg-clip-text text-transparent">
-              Collect responses.
-            </span>
+            Collect responses.
           </h1>
-          <p className="mx-auto mt-6 max-w-xl text-pretty text-base text-white/60 md:text-lg">
-            The intake workspace for modern studios. Build a form in minutes, share a link, and
-            watch responses land in a calm, organized dashboard.
+
+          <p className="mt-5 max-w-xl text-pretty text-sm font-light text-white/60 sm:text-base">
+            Build branded intake forms, share them with one link, and watch responses land in a
+            calm, organized workspace.
           </p>
+
+          {/* Keep existing CTAs */}
           <div className="mt-10 flex items-center justify-center gap-3">
             {isSignedIn ? (
               <Link
                 to="/dashboard"
-                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#7C5CFF] px-6 text-sm font-semibold text-white hover:bg-[#7C5CFF]/90 transition-colors shadow-lg shadow-[#7C5CFF]/25"
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#7C5CFF] px-6 text-sm font-semibold text-white shadow-lg shadow-[#7C5CFF]/25 transition-colors hover:bg-[#7C5CFF]/90"
               >
                 Go to Dashboard <ArrowRight className="size-4" />
               </Link>
@@ -103,20 +120,32 @@ function Home() {
             )}
           </div>
 
-          <div className="relative mx-auto mt-20 max-w-6xl">
-            <div className="absolute -inset-x-10 -top-8 h-72 bg-[radial-gradient(ellipse_at_center,rgba(124,92,255,0.3),transparent_68%)] blur-3xl" />
-            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-2 shadow-[0_34px_140px_-34px_rgba(124,92,255,0.55)]">
-              <img
-                src="/hero-dashboard.svg"
-                alt="Formline clients dashboard showing active partnerships, client metrics, filters, and a partner table"
-                className="block w-full rounded-xl border border-white/5 bg-[#0A0A0B]"
-                loading="eager"
-              />
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0A0A0B] to-transparent" />
-            </div>
+          <HeroLogoMarquee />
+        </div>
+
+        {/* Divider with corner marks */}
+        <div className="relative z-10 mt-12 w-full border-b border-white/10">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 -top-[5px] flex justify-between px-4 md:px-16 lg:px-24 xl:px-32"
+          >
+            <div className="size-2.5 rotate-45 bg-white/80" />
+            <div className="size-2.5 rotate-45 bg-white/80" />
           </div>
         </div>
-      </section>
+
+        {/* Dashboard preview — full bleed frame */}
+        <div className="relative z-10 w-full px-4 md:px-16 lg:px-24 xl:px-32">
+          <div className="flex w-full items-center justify-center bg-white/[0.04] px-4 py-4 pb-8 md:pt-8 md:pb-12">
+            <img
+              src="/hero-dashboard.png"
+              alt="Formline workspace dashboard showing intake trends, form stats, and recent activity"
+              className="block h-auto w-full max-w-6xl"
+              loading="eager"
+            />
+          </div>
+        </div>
+      </header>
 
       {/* features */}
       <section id="features" className="border-t border-white/5 py-16 sm:py-24">
@@ -325,32 +354,80 @@ function Home() {
       </section>
 
       {/* pricing / CTA */}
-      <section id="pricing" className="border-t border-white/5 py-24">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <h2 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
-            Start free. Forever.
-          </h2>
-          <p className="mt-4 text-white/60">
-            Unlimited forms and responses while in beta. No credit card.
-          </p>
-          <ul className="mx-auto mt-8 inline-flex flex-col items-start gap-2 text-sm text-white/70">
-            {[
-              "Unlimited forms",
-              "Unlimited responses",
-              "Shareable links + email",
-              "Built-in dashboard",
-            ].map((f) => (
-              <li key={f} className="flex items-center gap-2">
-                <Check className="size-4 text-[#7C5CFF]" /> {f}
-              </li>
-            ))}
-          </ul>
-          <Link
-            to={isSignedIn ? "/dashboard" : "/auth"}
-            className="mt-10 inline-flex h-12 items-center gap-2 rounded-lg bg-white px-6 text-sm font-medium text-black hover:opacity-90"
-          >
-            {isSignedIn ? "Go to Dashboard" : "Create your workspace"} <ArrowRight className="size-4" />
-          </Link>
+      <section id="pricing" className="relative border-t border-white/5 py-24">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="max-w-2xl">
+            <span className="text-xs font-medium uppercase tracking-[0.18em] text-[#7C5CFF]">
+              Pricing
+            </span>
+            <h2 className="mt-3 text-4xl font-semibold tracking-tight text-white md:text-5xl">
+              Start free. Forever.
+            </h2>
+            <p className="mt-4 text-white/60">
+              Unlimited forms and responses while in beta. No credit card required.
+            </p>
+          </div>
+
+          <div className="relative mt-12 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.05] to-transparent">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -top-24 left-1/2 h-48 w-[480px] -translate-x-1/2 bg-[radial-gradient(ellipse_at_center,rgba(124,92,255,0.22),transparent_70%)] blur-3xl"
+            />
+
+            <div className="relative grid gap-10 p-8 md:grid-cols-[1fr_auto] md:items-center md:p-12">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[
+                  "Unlimited forms",
+                  "Unlimited responses",
+                  "Shareable links + email",
+                  "Built-in dashboard",
+                ].map((f) => (
+                  <div
+                    key={f}
+                    className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3.5"
+                  >
+                    <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-[#7C5CFF]/15">
+                      <Check className="size-3.5 text-[#7C5CFF]" />
+                    </span>
+                    <span className="text-sm text-white/80">{f}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col items-start gap-4 md:items-end md:text-right">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/60">
+                  <span className="size-1.5 rounded-full bg-[#7C5CFF]" />
+                  Beta access
+                </div>
+                {isSignedIn ? (
+                  <Link
+                    to="/dashboard"
+                    className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#7C5CFF] px-6 text-sm font-semibold text-white shadow-lg shadow-[#7C5CFF]/25 transition-colors hover:bg-[#7C5CFF]/90"
+                  >
+                    Go to Dashboard <ArrowRight className="size-4" />
+                  </Link>
+                ) : (
+                  <ShinyButton onClick={() => navigate({ to: "/auth" })}>
+                    Create your workspace
+                  </ShinyButton>
+                )}
+                <p className="text-xs text-white/40">Free while in beta · cancel anytime</p>
+              </div>
+            </div>
+
+            <div className="relative border-t border-white/10 px-8 py-4 md:px-12">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 -top-[5px] flex justify-between px-8 md:px-12"
+              >
+                <div className="size-2 rotate-45 bg-white/60" />
+                <div className="size-2 rotate-45 bg-white/60" />
+              </div>
+              <p className="text-center text-xs text-white/45">
+                Everything included — forms, responses, client workspace, and email delivery.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 

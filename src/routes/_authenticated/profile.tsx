@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/profile")({
 
 function ProfilePage() {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-[520px] before:bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(124,92,255,0.28),transparent_60%)] before:content-['']">
+    <div className="relative min-h-screen bg-background before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-[520px] before:bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(124,92,255,0.28),transparent_60%)] before:content-['']">
       <main className="relative mx-auto max-w-5xl px-6 py-12 lg:px-8">
         {/* Navigation Link */}
         <Link
@@ -54,7 +54,7 @@ function ProfilePage() {
           transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
           className="w-full flex justify-center py-6"
         >
-          <div className="w-full max-w-4xl overflow-hidden rounded-2xl border border-hairline bg-surface/50 backdrop-blur-md p-2 shadow-2xl">
+          <div className="w-full max-w-4xl overflow-hidden rounded-2xl border border-hairline bg-surface/50 p-2 shadow-2xl backdrop-blur-md [&_.cl-footer]:hidden [&_.cl-developmentModeNotice]:hidden [&_[class*='footer']]:hidden">
             <UserProfile appearance={clerkAppearance} />
           </div>
         </motion.section>

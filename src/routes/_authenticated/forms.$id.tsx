@@ -280,28 +280,28 @@ function FormDetail() {
         </Link>
 
         <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="flex-1 bg-transparent font-serif text-2xl sm:text-3xl md:text-4xl outline-none focus:ring-0"
-          />
-          <div className="flex items-center gap-2">
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <input
-                type="checkbox"
-                checked={published}
-                onChange={(e) => setPublished(e.target.checked)}
-              />
-              Published
-            </label>
-            <button
-              onClick={() => saveMut.mutate()}
-              disabled={saveMut.isPending}
-              className="inline-flex h-10 items-center gap-2 rounded-lg bg-foreground px-4 text-sm font-medium text-background disabled:opacity-50"
-            >
-              <Save className="size-4" /> Save
-            </button>
-          </div>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="flex-1 bg-transparent font-serif text-2xl sm:text-3xl md:text-4xl outline-none focus:ring-0"
+            />
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={published}
+                  onChange={(e) => setPublished(e.target.checked)}
+                />
+                Published
+              </label>
+              <button
+                onClick={() => saveMut.mutate()}
+                disabled={saveMut.isPending}
+                className="inline-flex h-10 items-center gap-2 rounded-lg bg-foreground px-4 text-sm font-medium text-background disabled:opacity-50"
+              >
+                <Save className="size-4" /> Save
+              </button>
+            </div>
         </div>
 
         {/* Share strip */}

@@ -171,9 +171,18 @@
 /* Hide remaining Clerk branding on embedded auth components */
 .cl-footer,
 .cl-footerPages,
+.cl-footerAction,
 .cl-badge,
 .cl-logoBox,
-.cl-developmentModeNotice {
+.cl-developmentModeNotice,
+.cl-navbarFooter,
+.cl-userProfileFooter,
+.cl-userButtonPopoverFooter,
+.cl-userProfile-root [class*="footer"],
+.cl-userProfile-root [class*="Footer"],
+.cl-userProfile-root a[href*="clerk.com"],
+.cl-userProfile-root img[alt*="Clerk"],
+.cl-userProfile-root img[alt*="clerk"] {
   display: none !important;
 }
 
@@ -256,4 +265,41 @@
 
 .animate-flow-dash {
   animation: flowDash 0.8s linear infinite;
+}
+
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0%);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee-scroll {
+  animation: marquee-scroll 15s linear infinite;
+}
+
+/* Sonner renders close button first in DOM — reorder to icon | content | close */
+[data-sonner-toast]:not([data-styled="true"]) {
+  display: flex !important;
+  align-items: flex-start;
+}
+
+[data-sonner-toast]:not([data-styled="true"]) [data-close-button] {
+  position: static !important;
+  transform: none !important;
+  order: 3;
+  margin-left: auto;
+}
+
+[data-sonner-toast]:not([data-styled="true"]) [data-icon] {
+  order: 1;
+}
+
+[data-sonner-toast]:not([data-styled="true"]) [data-content] {
+  order: 2;
+  flex: 1;
+  min-width: 0;
 }
