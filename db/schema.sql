@@ -1,4 +1,5 @@
 -- Formline database schema
+-- Table order matters: clients must exist before form_submissions.converted_client_id FK.
 
 CREATE TABLE IF NOT EXISTS forms (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -14,19 +15,6 @@ CREATE TABLE IF NOT EXISTS forms (
 
 CREATE INDEX IF NOT EXISTS forms_owner_id_idx ON forms (owner_id);
 CREATE INDEX IF NOT EXISTS forms_share_token_idx ON forms (share_token);
-
-CREATE TABLE IF NOT EXISTS form_submissions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  form_id UUID NOT NULL REFERENCES forms(id) ON DELETE CASCADE,
-  data JSONB NOT NULL DEFAULT '{}'::jsonb,
-  submitter_name TEXT,
-  submitter_email TEXT,
-  submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  status TEXT NOT NULL DEFAULT 'New',
-  converted_client_id UUID REFERENCES clients(id) ON DELETE SET NULL
-);
-
-CREATE INDEX IF NOT EXISTS form_submissions_form_id_idx ON form_submissions (form_id);
 
 CREATE TABLE IF NOT EXISTS clients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -56,13 +44,27 @@ CREATE INDEX IF NOT EXISTS clients_owner_id_idx ON clients (owner_id);
 CREATE INDEX IF NOT EXISTS clients_updated_at_idx ON clients (updated_at DESC);
 CREATE INDEX IF NOT EXISTS clients_portal_token_idx ON clients (portal_token);
 
+CREATE TABLE IF NOT EXISTS form_submissions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  form_id UUID NOT NULL REFERENCES forms(id) ON DELETE CASCADE,
+  data JSONB NOT NULL DEFAULT '{}'::jsonb,
+  submitter_name TEXT,
+  submitter_email TEXT,
+  submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  status TEXT NOT NULL DEFAULT 'New',
+  converted_client_id UUID REFERENCES clients(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS form_submissions_form_id_idx ON form_submissions (form_id);
+CREATE INDEX IF NOT EXISTS form_submissions_converted_client_id_idx ON form_submissions (converted_client_id);
+
 CREATE TABLE IF NOT EXISTS client_files (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   client_id UUID NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   size INTEGER NOT NULL DEFAULT 0,
   type TEXT NOT NULL DEFAULT '',
-  data_url TEXT,
+  data_url TEXT, -- legacy intake embeds; new uploads use url (storage.server.ts)
   url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -116,3 +118,25 @@ CREATE TABLE IF NOT EXISTS automations (
 
 CREATE INDEX IF NOT EXISTS automations_owner_id_idx ON automations (owner_id);
 CREATE INDEX IF NOT EXISTS automations_owner_enabled_idx ON automations (owner_id, enabled);
+
+-- Cached Clerk owner profiles (email lookup for notifications / cron)
+CREATE TABLE IF NOT EXISTS owners (
+  owner_id UUID PRIMARY KEY,
+  clerk_user_id TEXT NOT NULL,
+  email TEXT NOT NULL,
+  first_name TEXT,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS owners_clerk_user_id_idx ON owners (clerk_user_id);
+CREATE INDEX IF NOT EXISTS owners_email_idx ON owners (email);
+
+CREATE TABLE IF NOT EXISTS owner_settings (
+  owner_id UUID PRIMARY KEY,
+  notification_email TEXT,
+  notification_form_submit BOOLEAN NOT NULL DEFAULT true,
+  notification_weekly_digest BOOLEAN NOT NULL DEFAULT false,
+  notification_client_status_change BOOLEAN NOT NULL DEFAULT true,
+  notification_form_published BOOLEAN NOT NULL DEFAULT false,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

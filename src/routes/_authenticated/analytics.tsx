@@ -6,6 +6,11 @@ import { motion } from "framer-motion";
 import { useClients, type ClientStatus } from "@/lib/clients-store";
 import { listForms, listAllSubmissions } from "@/lib/forms.functions";
 import {
+  buildMonthlyAreaChart,
+  countItemsByMonth,
+  getLastMonthBuckets,
+} from "@/lib/workspace-metrics";
+import {
   BarChart3,
   Users,
   FileText,
@@ -26,8 +31,6 @@ export const Route = createFileRoute("/_authenticated/analytics")({
   }),
   component: AnalyticsPage,
 });
-
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function AnalyticsPage() {
   const { clients, isLoading: clientsLoading } = useClients();
@@ -63,40 +66,28 @@ function AnalyticsPage() {
   const totalClients = clients.length;
   const activeClients = clients.filter((c) => c.status !== "Completed").length;
 
-  // --- Submissions per month (last 6 months) ---
-  const subsByMonth = useMemo(() => {
-    const now = new Date();
-    return Array.from({ length: 6 }, (_, i) => {
-      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
-      const month = d.getMonth();
-      const year = d.getFullYear();
-      const count = submissions.filter((s) => {
-        const sd = new Date(s.submitted_at);
-        return sd.getMonth() === month && sd.getFullYear() === year;
-      }).length;
-      return { label: MONTHS[month], count, x: 50 + i * 90, y: 0 };
-    });
-  }, [submissions]);
+  const monthBuckets = useMemo(() => getLastMonthBuckets(6), []);
 
-  const maxSubCount = Math.max(...subsByMonth.map((m) => m.count), 1);
-  const chartH = 160;
-  const subPoints = subsByMonth.map((m) => ({
-    ...m,
-    y: chartH - Math.round((m.count / maxSubCount) * chartH) + 20,
-  }));
+  const subsByMonth = useMemo(
+    () =>
+      countItemsByMonth(submissions, monthBuckets, (s) => new Date(s.submitted_at)),
+    [submissions, monthBuckets],
+  );
 
-  // Build bezier path
-  const subStrokePath = subPoints.length > 1
-    ? subPoints.reduce((acc, pt, i) => {
-        if (i === 0) return `M ${pt.x} ${pt.y}`;
-        const prev = subPoints[i - 1];
-        const cpx = (prev.x + pt.x) / 2;
-        return acc + ` C ${cpx} ${prev.y}, ${cpx} ${pt.y}, ${pt.x} ${pt.y}`;
-      }, "")
-    : "";
-  const subFillPath = subStrokePath
-    ? `${subStrokePath} L ${subPoints[subPoints.length - 1].x} ${chartH + 40} L ${subPoints[0].x} ${chartH + 40} Z`
-    : "";
+  const clientsByMonth = useMemo(
+    () =>
+      countItemsByMonth(clients, monthBuckets, (c) => new Date(c.createdAt)),
+    [clients, monthBuckets],
+  );
+
+  const submissionsChart = useMemo(
+    () => buildMonthlyAreaChart(subsByMonth, { xStart: 50, xStep: 90, yTop: 20, yBottom: 180 }),
+    [subsByMonth],
+  );
+
+  const subPoints = submissionsChart.points;
+  const subStrokePath = submissionsChart.strokePath;
+  const subFillPath = submissionsChart.fillPath;
 
   // --- Client status breakdown ---
   const statusStats = useMemo(() => {
@@ -212,6 +203,10 @@ function AnalyticsPage() {
             <div className="relative flex-1 min-h-[200px]">
               {subsLoading ? (
                 <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading…</div>
+              ) : !submissionsChart.hasData ? (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                  No submissions in the last 6 months.
+                </div>
               ) : (
                 <svg className="w-full h-full" viewBox="0 0 540 220" preserveAspectRatio="none">
                   <defs>
@@ -246,6 +241,11 @@ function AnalyticsPage() {
                 </svg>
               )}
             </div>
+            {!subsLoading && submissionsChart.hasData && (
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                {clientsByMonth.reduce((n, m) => n + m.count, 0)} new clients in the same period
+              </p>
+            )}
           </div>
 
           {/* Client Status Breakdown */}

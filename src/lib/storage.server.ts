@@ -3,10 +3,25 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 
+/**
+ * Client file storage: Supabase Storage (production) or local disk (dev fallback).
+ *
+ * - With SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY: files upload to the `client-files` bucket.
+ * - Without Supabase: files are written to `public/uploads/` and served at `/uploads/...`.
+ *   On serverless (Vercel, etc.) that directory is ephemeral — uploads disappear on redeploy.
+ *   Configure Supabase for persistent production file storage.
+ */
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const useSupabase = Boolean(supabaseUrl && supabaseServiceKey);
+
+if (!useSupabase && process.env.NODE_ENV === "development") {
+  console.warn(
+    "[storage] SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set — using public/uploads/ (local disk). " +
+      "Files are ephemeral on serverless; set Supabase env vars for production.",
+  );
+}
 
 // Initialize Supabase if variables are present
 const supabase = useSupabase ? createClient(supabaseUrl!, supabaseServiceKey!) : null;

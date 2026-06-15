@@ -1,7 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, Check, Paperclip, X } from "@/components/heroicons";
-import { useClients, type ClientFile } from "@/lib/clients-store";
+import { useClients } from "@/lib/clients-store";
+import { uploadClientFile } from "@/lib/clients.functions";
+import { fileToBase64 } from "@/lib/client-files";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/intake")({
@@ -40,7 +44,11 @@ type Draft = {
   deadline: string;
   services: string[];
   notes: string;
-  files: ClientFile[];
+};
+
+type PendingIntakeFile = {
+  id: string;
+  file: File;
 };
 
 const empty: Draft = {
@@ -59,7 +67,6 @@ const empty: Draft = {
   deadline: "",
   services: [],
   notes: "",
-  files: [],
 };
 
 const STEPS = [
@@ -92,29 +99,28 @@ const SERVICES = [
   "SEO",
 ];
 
-const DRAFT_KEY = "cph.intake.draft.v1";
-
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
+const DRAFT_KEY = "cph.intake.draft.v2";
 
 function Intake() {
   const navigate = useNavigate();
   const { addClient } = useClients();
+  const uploadFile = useServerFn(uploadClientFile);
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<Draft>(empty);
+  const [pendingFiles, setPendingFiles] = useState<PendingIntakeFile[]>([]);
+  const [submitting, setSubmitting] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
-  // Load draft
+  // Load draft (files are not persisted — re-attach on submit only)
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(DRAFT_KEY);
-      if (raw) setDraft({ ...empty, ...(JSON.parse(raw) as Partial<Draft>) });
+      const raw = localStorage.getItem(DRAFT_KEY) ?? localStorage.getItem("cph.intake.draft.v1");
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<Draft> & { files?: unknown };
+        const { files: _ignored, ...rest } = parsed;
+        setDraft({ ...empty, ...rest });
+      }
     } catch {
       // ignore corrupt or unavailable storage
     }
@@ -164,34 +170,49 @@ function Intake() {
 
   async function onFiles(list: FileList | null) {
     if (!list) return;
-    const incoming: ClientFile[] = [];
+    const incoming: PendingIntakeFile[] = [];
     for (const file of Array.from(list).slice(0, 8)) {
       if (file.size > 4 * 1024 * 1024) {
         toast.error(`${file.name} is larger than 4 MB and was skipped.`);
         continue;
       }
-      const dataUrl = await fileToDataUrl(file);
       incoming.push({
         id: `f-${Math.random().toString(36).slice(2, 8)}`,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        dataUrl,
+        file,
       });
     }
-    setDraft((d) => ({ ...d, files: [...d.files, ...incoming] }));
+    setPendingFiles((prev) => [...prev, ...incoming]);
   }
 
   async function submit() {
+    setSubmitting(true);
     try {
-      const record = await addClient(draft);
+      const record = await addClient({ ...draft, files: [] });
+
+      for (const pending of pendingFiles) {
+        const fileBase64 = await fileToBase64(pending.file);
+        await uploadFile({
+          data: {
+            clientId: record.id,
+            fileName: pending.file.name,
+            fileSize: pending.file.size,
+            fileType: pending.file.type,
+            fileBase64,
+          },
+        });
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["clients"] });
       localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem("cph.intake.draft.v1");
       toast.success(`${record.company} added to your workspace`);
       navigate({ to: "/clients/$id", params: { id: record.id } });
     } catch (err) {
       console.error(err);
       const msg = err instanceof Error ? err.message : "Failed to add client. Please try again.";
       toast.error(msg);
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -402,20 +423,17 @@ function Intake() {
                     onChange={(e) => onFiles(e.target.files)}
                   />
                 </label>
-                {draft.files.length > 0 && (
+                {pendingFiles.length > 0 && (
                   <ul className="mt-3 space-y-2">
-                    {draft.files.map((f) => (
+                    {pendingFiles.map((f) => (
                       <li
                         key={f.id}
                         className="flex items-center justify-between rounded-lg bg-surface-muted px-3 py-2 text-xs ring-1 ring-hairline"
                       >
-                        <span className="truncate">{f.name}</span>
+                        <span className="truncate">{f.file.name}</span>
                         <button
                           onClick={() =>
-                            set(
-                              "files",
-                              draft.files.filter((x) => x.id !== f.id),
-                            )
+                            setPendingFiles((prev) => prev.filter((x) => x.id !== f.id))
                           }
                           className="ml-3 text-muted-foreground hover:text-foreground"
                         >
@@ -507,7 +525,7 @@ function Intake() {
                     ["Budget", draft.budget || "—"],
                     ["Deadline", draft.deadline || "—"],
                     ["Services", draft.services.join(", ") || "—"],
-                    ["Files", `${draft.files.length} attached`],
+                    ["Files", `${pendingFiles.length} attached`],
                   ].map(([k, v]) => (
                     <div
                       key={k}
@@ -545,9 +563,10 @@ function Intake() {
               <button
                 type="button"
                 onClick={submit}
-                className="inline-flex h-10 items-center gap-2 rounded-lg bg-foreground px-5 text-sm font-medium text-background ring-1 ring-foreground transition-colors hover:bg-foreground/90"
+                disabled={submitting}
+                className="inline-flex h-10 items-center gap-2 rounded-lg bg-foreground px-5 text-sm font-medium text-background ring-1 ring-foreground transition-colors hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Submit intake <Check className="size-4" />
+                {submitting ? "Submitting…" : "Submit intake"} <Check className="size-4" />
               </button>
             )}
           </div>

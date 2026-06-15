@@ -22,6 +22,7 @@ import {
   type ClientRecord,
   type ClientFile,
 } from "@/lib/clients-store";
+import { getClientFileHref, fileToBase64 } from "@/lib/client-files";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -107,7 +108,7 @@ function ClientProfile() {
     }
   }, [client?.notes]);
 
-  const insight = useMemo(() => {
+  const clientBrief = useMemo(() => {
     if (!client) return "";
     const tone =
       client.brandColors[0]?.toLowerCase() && parseInt(client.brandColors[0].slice(1, 3), 16) < 80
@@ -302,7 +303,7 @@ function ClientProfile() {
                   </p>
                 </div>
 
-                {/* AI Insight */}
+                {/* Client brief */}
                 <div className="rounded-2xl bg-surface p-6 ring-1 ring-hairline">
                   <div className="flex items-start gap-3">
                     <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-foreground text-background">
@@ -310,10 +311,13 @@ function ClientProfile() {
                     </div>
                     <div>
                       <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        AI client insight
+                        Client brief
                       </h3>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Quick read from intake details — brand, services, and goals.
+                      </p>
                       <p className="mt-2 font-serif text-xl leading-snug italic text-foreground">
-                        "{insight}"
+                        "{clientBrief}"
                       </p>
                     </div>
                   </div>
@@ -725,11 +729,7 @@ function FilesSection({ client }: { client: ClientRecord }) {
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const arrayBuffer = await file.arrayBuffer();
-        const bytes = new Uint8Array(arrayBuffer);
-        let binary = "";
-        for (let b = 0; b < bytes.byteLength; b++) binary += String.fromCharCode(bytes[b]);
-        const fileBase64 = btoa(binary);
+        const fileBase64 = await fileToBase64(file);
 
         await uploadFile({
           data: {
@@ -822,7 +822,9 @@ function FilesSection({ client }: { client: ClientRecord }) {
         </div>
       ) : (
         <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {client.files.map((f: ClientFile) => (
+          {client.files.map((f: ClientFile) => {
+            const href = getClientFileHref(f);
+            return (
             <li
               key={f.id}
               className="flex items-center justify-between rounded-xl bg-surface p-4 ring-1 ring-hairline"
@@ -836,9 +838,9 @@ function FilesSection({ client }: { client: ClientRecord }) {
                 </div>
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                {(f.signedUrl || f.dataUrl) && (
+                {href && (
                   <a
-                    href={f.signedUrl || f.dataUrl}
+                    href={href}
                     download={f.name}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -856,7 +858,8 @@ function FilesSection({ client }: { client: ClientRecord }) {
                 </button>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </div>

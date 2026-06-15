@@ -1,49 +1,93 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { sql } from "@/lib/db";
-import { clerkClient } from "@clerk/tanstack-react-start/server";
 import { sendAutomationEmail } from "@/lib/email.server";
+import { normalizeAutomation } from "@/lib/automations.functions";
+import { shouldRunTrigger } from "@/lib/automations.server";
+import { getOwnerProfileByUuid } from "@/lib/clerk.server";
+import { getOwnerNotificationSettings } from "@/lib/settings.functions";
 import crypto from "node:crypto";
 
-function getDeterministicUuid(str: string): string {
-  const hash = crypto.createHash("md5").update(str).digest("hex");
-  const variant = ((parseInt(hash[15], 16) & 0x3) | 0x8).toString(16);
-  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(12, 15)}-${variant}${hash.slice(16, 19)}-${hash.slice(19, 31)}`;
+function verifyCronRequest(request: Request): boolean {
+  if (process.env.NODE_ENV === "development") {
+    return true;
+  }
+
+  const secret = process.env.CRON_SECRET;
+  if (!secret) {
+    console.warn("[Cron] CRON_SECRET is not set — rejecting request in production");
+    return false;
+  }
+
+  const authHeader = request.headers.get("authorization");
+  const cronHeader = request.headers.get("x-cron-secret");
+  const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : null;
+  const provided = bearer ?? cronHeader?.trim();
+  if (!provided) return false;
+
+  const expected = Buffer.from(secret);
+  const actual = Buffer.from(provided);
+  if (expected.length !== actual.length) return false;
+  return crypto.timingSafeEqual(expected, actual);
 }
 
 export const Route = createFileRoute("/api/cron/weekly-summary")({
   server: {
     handlers: {
       GET: async ({ request }: { request: Request }) => {
+        if (!verifyCronRequest(request)) {
+          return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
         console.log("[Cron] Weekly Summary Triggered");
 
         try {
-          // 1. Find all owners who have an enabled automation with trigger_schedule
-          const enabledSchedulers = await sql`
-            SELECT DISTINCT owner_id FROM automations
+          // 1. Find enabled automations with schedule triggers (weekly only)
+          const automationRows = await sql`
+            SELECT * FROM automations
             WHERE enabled = true AND nodes @> '[{"kind":"trigger_schedule"}]'::jsonb
           `;
 
-          if (enabledSchedulers.length === 0) {
-            console.log("[Cron] No enabled schedule automations found.");
-            return new Response(JSON.stringify({ message: "No active summary automations." }), {
+          const weeklyOwnerIds = new Set<string>();
+          const weeklyAutomationIds: string[] = [];
+
+          for (const row of automationRows) {
+            const auto = normalizeAutomation(row as Record<string, unknown>);
+            const hasWeeklyTrigger = auto.nodes.some(
+              (n) =>
+                n.kind === "trigger_schedule" && shouldRunTrigger(n, "trigger_schedule", {}),
+            );
+            if (hasWeeklyTrigger) {
+              weeklyOwnerIds.add(String(row.owner_id));
+              weeklyAutomationIds.push(auto.id);
+            }
+          }
+
+          if (weeklyOwnerIds.size === 0) {
+            console.log("[Cron] No enabled weekly schedule automations found.");
+            return new Response(JSON.stringify({ message: "No active weekly summary automations." }), {
               status: 200,
               headers: { "Content-Type": "application/json" },
             });
           }
 
-          // 2. Fetch clerk users to map emails
-          const userListResult = await clerkClient().users.getUserList();
-          const clerkUsers = Array.isArray(userListResult) ? userListResult : userListResult.data || [];
-
+          // 2. Resolve owner emails from owners cache (Clerk fallback if cold)
           const results = [];
 
-          for (const row of enabledSchedulers) {
-            const ownerId = String(row.owner_id);
-            const clerkUser = clerkUsers.find((u) => getDeterministicUuid(u.id) === ownerId);
-            const email = clerkUser?.primaryEmailAddress?.emailAddress;
+          for (const ownerId of weeklyOwnerIds) {
+            const prefs = await getOwnerNotificationSettings(ownerId);
+            if (!prefs.notificationWeeklyDigest) {
+              console.log(`[Cron] Skipping weekly digest for owner ${ownerId} (disabled in settings)`);
+              continue;
+            }
+
+            const owner = await getOwnerProfileByUuid(ownerId);
+            const email = owner?.email;
 
             if (!email) {
-              console.warn(`[Cron] Could not find Clerk email for owner UUID: ${ownerId}`);
+              console.warn(`[Cron] Could not find email for owner UUID: ${ownerId}`);
               continue;
             }
 
@@ -86,7 +130,7 @@ export const Route = createFileRoute("/api/cron/weekly-summary")({
                   <p style="font-size: 14px; color: #71717A; margin-top: 4px;">Weekly Workspace Summary</p>
                 </div>
                 
-                <p style="font-size: 16px; line-height: 1.6; color: #18181B; margin-bottom: 24px;">Hi ${clerkUser?.firstName || "there"},</p>
+                <p style="font-size: 16px; line-height: 1.6; color: #18181B; margin-bottom: 24px;">Hi ${owner?.firstName || "there"},</p>
                 <p style="font-size: 15px; line-height: 1.6; color: #3F3F46; margin-bottom: 32px;">Here is a snapshot of your workspace activity over the past 7 days. Excellent work keeping things moving!</p>
                 
                 <div style="grid-template-columns: repeat(2, 1fr); gap: 16px; display: table; width: 100%; margin-bottom: 32px;">
@@ -144,12 +188,14 @@ export const Route = createFileRoute("/api/cron/weekly-summary")({
               body,
             });
 
-            // 5. Update Runs and Last Run
-            await sql`
-              UPDATE automations
-              SET runs = runs + 1, last_run = NOW()
-              WHERE owner_id = ${ownerId}::uuid AND enabled = true AND nodes @> '[{"kind":"trigger_schedule"}]'::jsonb
-            `;
+            // 5. Update runs for weekly schedule automations only
+            for (const automationId of weeklyAutomationIds) {
+              await sql`
+                UPDATE automations
+                SET runs = runs + 1, last_run = NOW()
+                WHERE id = ${automationId}::uuid AND owner_id = ${ownerId}::uuid
+              `;
+            }
 
             results.push({ ownerId, email, success: true });
           }

@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { Features } from "@/components/blocks/features-10";
+import { LandingNavbar } from "@/components/landing-navbar";
 import { Logo } from "@/components/logo";
 import { ShinyButton } from "@/components/ui/shiny-button";
 import {
@@ -54,53 +55,7 @@ function Home() {
 
   return (
     <div className="dark min-h-screen bg-[#0A0A0B] text-[#E5E5E7] antialiased">
-      {/* nav */}
-      <header className="sticky top-0 z-40 border-b border-white/5 bg-[#0A0A0B]/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
-          <Link to="/" className="flex items-center">
-            <Logo />
-          </Link>
-          <nav className="hidden items-center gap-8 text-sm text-white/60 md:flex">
-            <a href="#features" className="hover:text-white">
-              Features
-            </a>
-            <a href="#templates" className="hover:text-white">
-              Templates
-            </a>
-            <a href="#workspace" className="hover:text-white">
-              Workspace
-            </a>
-            <a href="#how" className="hover:text-white">
-              How it works
-            </a>
-            <a href="#pricing" className="hover:text-white">
-              Pricing
-            </a>
-          </nav>
-          <div className="flex items-center gap-3">
-            {isSignedIn ? (
-              <Link
-                to="/dashboard"
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#7C5CFF] px-4 text-sm font-medium text-white hover:bg-[#7C5CFF]/90 transition-colors"
-              >
-                Dashboard <ArrowRight className="size-3.5" />
-              </Link>
-            ) : (
-              <>
-                <Link to="/auth" className="text-sm text-white/70 hover:text-white">
-                  Sign in
-                </Link>
-                <Link
-                  to="/auth"
-                  className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-white px-3.5 text-sm font-medium text-black hover:bg-white/90"
-                >
-                  Start free <ArrowRight className="size-3.5" />
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <LandingNavbar isSignedIn={isSignedIn} />
 
       {/* hero */}
       <section className="relative overflow-hidden">

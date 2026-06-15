@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
 import { useClerk } from "@clerk/tanstack-react-start";
-import { useNavigate } from "@tanstack/react-router";
 import {
   User,
   Mail,
@@ -11,7 +12,9 @@ import {
   Zap,
   LogOut,
   Check,
+  Loader2,
 } from "@/components/heroicons";
+import { getSettings, updateSettings, type OwnerSettings } from "@/lib/settings.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -29,6 +32,39 @@ export const Route = createFileRoute("/_authenticated/settings")({
 
 type TabId = "account" | "notifications" | "security";
 
+type NotifKey =
+  | "notificationFormSubmit"
+  | "notificationClientStatusChange"
+  | "notificationWeeklyDigest"
+  | "notificationFormPublished";
+
+const NOTIF_ITEMS: Array<{
+  key: NotifKey;
+  label: string;
+  desc: string;
+}> = [
+  {
+    key: "notificationFormSubmit",
+    label: "New form response",
+    desc: "Get notified every time someone submits one of your forms.",
+  },
+  {
+    key: "notificationClientStatusChange",
+    label: "Client status change",
+    desc: "Alerts when a client's pipeline status is updated.",
+  },
+  {
+    key: "notificationWeeklyDigest",
+    label: "Weekly digest",
+    desc: "A summary of your workspace activity every Monday.",
+  },
+  {
+    key: "notificationFormPublished",
+    label: "Form published",
+    desc: "Confirmation when you publish or unpublish a form.",
+  },
+];
+
 const TABS: { id: TabId; label: string; icon: typeof User }[] = [
   { id: "account", label: "Account", icon: User },
   { id: "notifications", label: "Notifications", icon: Mail },
@@ -39,15 +75,34 @@ function SettingsPage() {
   const { user } = useAuth();
   const { signOut } = useClerk();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabId>("account");
 
-  // Notification toggles (local state — extend with DB persistence as needed)
-  const [notifs, setNotifs] = useState({
-    newSubmission: true,
-    weeklyDigest: false,
-    clientStatusChange: true,
-    formPublished: false,
+  const fetchSettings = useServerFn(getSettings);
+  const saveSettings = useServerFn(updateSettings);
+
+  const { data: settings, isLoading: settingsLoading } = useQuery({
+    queryKey: ["owner-settings"],
+    queryFn: () => fetchSettings(),
+    staleTime: 30_000,
   });
+
+  const settingsMutation = useMutation({
+    mutationFn: (patch: Partial<OwnerSettings>) => saveSettings({ data: patch }),
+    onSuccess: (next) => {
+      queryClient.setQueryData(["owner-settings"], next);
+      toast.success("Notification settings saved");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to save settings");
+    },
+  });
+
+  function toggleNotification(key: NotifKey) {
+    if (!settings) return;
+    const next = !settings[key];
+    settingsMutation.mutate({ [key]: next });
+  }
 
   async function handleSignOut() {
     await signOut();
@@ -191,43 +246,55 @@ function SettingsPage() {
                       <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">Email Notifications</h2>
                       <p className="mt-1 text-xs text-muted-foreground">Sent to <span className="font-medium text-foreground">{email}</span></p>
                     </div>
+                    {settingsLoading ? (
+                      <div className="flex items-center justify-center gap-2 px-6 py-12 text-sm text-muted-foreground">
+                        <Loader2 className="size-4 animate-spin" />
+                        Loading preferences…
+                      </div>
+                    ) : (
                     <div className="divide-y divide-hairline">
-                      {[
-                        { key: "newSubmission" as const, label: "New form response", desc: "Get notified every time someone submits one of your forms." },
-                        { key: "clientStatusChange" as const, label: "Client status change", desc: "Alerts when a client's pipeline status is updated." },
-                        { key: "weeklyDigest" as const, label: "Weekly digest", desc: "A summary of your workspace activity every Monday." },
-                        { key: "formPublished" as const, label: "Form published", desc: "Confirmation when you publish or unpublish a form." },
-                      ].map((item) => (
+                      {NOTIF_ITEMS.map((item) => {
+                        const enabled = settings?.[item.key] ?? false;
+                        const saving =
+                          settingsMutation.isPending &&
+                          settingsMutation.variables?.[item.key] !== undefined;
+                        return (
                         <div key={item.key} className="flex items-center justify-between px-6 py-4 gap-4">
                           <div>
                             <div className="text-sm font-medium text-foreground">{item.label}</div>
                             <div className="mt-0.5 text-xs text-muted-foreground">{item.desc}</div>
                           </div>
                           <button
-                            onClick={() => {
-                              setNotifs((p) => ({ ...p, [item.key]: !p[item.key] }));
-                              toast.success(notifs[item.key] ? "Notification disabled" : "Notification enabled");
-                            }}
-                            className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors focus:outline-none ${
-                              notifs[item.key] ? "bg-[#7C5CFF]" : "bg-surface-muted ring-1 ring-hairline"
+                            type="button"
+                            disabled={settingsMutation.isPending}
+                            onClick={() => toggleNotification(item.key)}
+                            className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors focus:outline-none disabled:opacity-60 ${
+                              enabled ? "bg-[#7C5CFF]" : "bg-surface-muted ring-1 ring-hairline"
                             }`}
                           >
                             <span
                               className={`inline-block size-5 rounded-full bg-white shadow transition-transform ${
-                                notifs[item.key] ? "translate-x-5" : "translate-x-0.5"
+                                enabled ? "translate-x-5" : "translate-x-0.5"
                               } mt-0.5`}
                             />
+                            {saving && (
+                              <span className="absolute -right-6 top-0.5">
+                                <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+                              </span>
+                            )}
                           </button>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
+                    )}
                   </div>
 
                   <div className="rounded-2xl bg-surface ring-1 ring-hairline p-6 flex items-start gap-3">
                     <Zap className="size-4 text-[#7C5CFF] shrink-0 mt-0.5" />
                     <div className="text-sm text-muted-foreground">
-                      <span className="font-medium text-foreground">Note: </span>
-                      Notification settings are saved locally in this session. Full persistence and webhook support is coming soon.
+                      <span className="font-medium text-foreground">Saved to your workspace. </span>
+                      Form response and weekly digest toggles take effect immediately for email notifications.
                     </div>
                   </div>
                 </div>

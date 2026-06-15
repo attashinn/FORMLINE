@@ -4,7 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { useClients, formatRelative, type ClientStatus } from "@/lib/clients-store";
-import { listForms } from "@/lib/forms.functions";
+import { listForms, listAllSubmissions } from "@/lib/forms.functions";
+import {
+  buildMonthlyAreaChart,
+  countItemsByMonth,
+  getLastMonthBuckets,
+} from "@/lib/workspace-metrics";
 import {
   FileText,
   Plus,
@@ -48,6 +53,7 @@ function statusChip(status: ClientStatus) {
 function Dashboard() {
   const { clients, isLoading } = useClients();
   const list = useServerFn(listForms);
+  const listSubs = useServerFn(listAllSubmissions);
 
   const {
     data: forms = [],
@@ -59,6 +65,15 @@ function Dashboard() {
     retry: 1,
     staleTime: 0,
   });
+
+  const { data: submissions = [], isLoading: subsLoading } = useQuery({
+    queryKey: ["all-submissions"],
+    queryFn: () => listSubs(),
+    retry: 1,
+    staleTime: 0,
+  });
+
+  const chartLoading = isLoading || subsLoading;
 
   const stats = useMemo(() => {
     const open = clients.filter((c) => c.status !== "Completed").length;
@@ -81,20 +96,39 @@ function Dashboard() {
       .slice(0, 4);
   }, [clients]);
 
-  // Hardcoded coordinates for our premium SVG Line/Area graph
-  // Data points: Jan (1), Feb (3), Mar (2), Apr (5), May (4), Jun (7)
-  const chartPoints = [
-    { label: "Jan", val: 1, x: 50, y: 190 },
-    { label: "Feb", val: 3, x: 140, y: 150 },
-    { label: "Mar", val: 2, x: 230, y: 170 },
-    { label: "Apr", val: 5, x: 320, y: 110 },
-    { label: "May", val: 4, x: 410, y: 130 },
-    { label: "Jun", val: 7, x: 500, y: 70 },
-  ];
+  const monthBuckets = useMemo(() => getLastMonthBuckets(6), []);
 
-  // Bezier curve string
-  const strokePath = "M 50 190 C 95 170, 95 150, 140 150 C 185 150, 185 170, 230 170 C 275 170, 275 110, 320 110 C 365 110, 365 130, 410 130 C 455 130, 455 70, 500 70";
-  const fillPath = `${strokePath} L 500 220 L 50 220 Z`;
+  const clientsByMonth = useMemo(
+    () =>
+      countItemsByMonth(clients, monthBuckets, (c) => new Date(c.createdAt)),
+    [clients, monthBuckets],
+  );
+
+  const submissionsByMonth = useMemo(
+    () =>
+      countItemsByMonth(submissions, monthBuckets, (s) => new Date(s.submitted_at)),
+    [submissions, monthBuckets],
+  );
+
+  const intakeChart = useMemo(
+    () => buildMonthlyAreaChart(clientsByMonth, { yTop: 70, yBottom: 190 }),
+    [clientsByMonth],
+  );
+
+  const hasTrendData = useMemo(
+    () =>
+      clientsByMonth.some((m) => m.count > 0) || submissionsByMonth.some((m) => m.count > 0),
+    [clientsByMonth, submissionsByMonth],
+  );
+
+  const yAxisTicks = useMemo(() => {
+    const plotHeight = 190 - 70;
+    const scaleMax = Math.max(intakeChart.maxCount, 1);
+    return intakeChart.yTickValues.map((val) => ({
+      val,
+      y: 190 - Math.round((val / scaleMax) * plotHeight),
+    }));
+  }, [intakeChart]);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-[520px] before:bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(124,92,255,0.28),transparent_60%)] before:content-['']">
@@ -165,12 +199,23 @@ function Dashboard() {
                 </h3>
               </div>
               <p className="text-xs text-muted-foreground">
-                Onboarded clients count over the last 6 months.
+                New clients and form responses over the last 6 months.
               </p>
             </div>
 
-            {/* Line/Area SVG chart */}
             <div className="my-6 relative w-full h-[230px] overflow-hidden">
+              {chartLoading ? (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                  Loading trends…
+                </div>
+              ) : !hasTrendData ? (
+                <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
+                  <p className="text-sm text-muted-foreground">No intake activity yet.</p>
+                  <p className="text-xs text-muted-foreground/70">
+                    Submit a form response or complete intake to see trends here.
+                  </p>
+                </div>
+              ) : (
               <svg className="w-full h-full" viewBox="0 0 550 250" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
@@ -184,34 +229,57 @@ function Dashboard() {
                 </defs>
 
                 {/* Grid Lines */}
-                <line x1="50" y1="70" x2="500" y2="70" stroke="var(--color-border)" strokeWidth="0.5" strokeDasharray="3 3" />
-                <line x1="50" y1="110" x2="500" y2="110" stroke="var(--color-border)" strokeWidth="0.5" strokeDasharray="3 3" />
-                <line x1="50" y1="150" x2="500" y2="150" stroke="var(--color-border)" strokeWidth="0.5" strokeDasharray="3 3" />
-                <line x1="50" y1="190" x2="500" y2="190" stroke="var(--color-border)" strokeWidth="0.5" strokeDasharray="3 3" />
+                {yAxisTicks.slice(0, -1).map((tick) => (
+                  <line
+                    key={tick.val}
+                    x1="50"
+                    y1={tick.y}
+                    x2="500"
+                    y2={tick.y}
+                    stroke="var(--color-border)"
+                    strokeWidth="0.5"
+                    strokeDasharray="3 3"
+                  />
+                ))}
                 <line x1="50" y1="220" x2="500" y2="220" stroke="var(--color-border)" strokeWidth="1" />
 
                 {/* Y Axis Labels */}
-                <text x="32" y="74" fill="var(--color-muted-foreground)" fontSize="10" textAnchor="end">8</text>
-                <text x="32" y="114" fill="var(--color-muted-foreground)" fontSize="10" textAnchor="end">5</text>
-                <text x="32" y="154" fill="var(--color-muted-foreground)" fontSize="10" textAnchor="end">3</text>
-                <text x="32" y="194" fill="var(--color-muted-foreground)" fontSize="10" textAnchor="end">1</text>
+                {yAxisTicks.map((tick) => (
+                  <text
+                    key={`label-${tick.val}`}
+                    x="32"
+                    y={tick.y + 4}
+                    fill="var(--color-muted-foreground)"
+                    fontSize="10"
+                    textAnchor="end"
+                  >
+                    {tick.val}
+                  </text>
+                ))}
 
                 {/* Area Fill */}
-                <path d={fillPath} fill="url(#areaGrad)" />
+                {intakeChart.fillPath && <path d={intakeChart.fillPath} fill="url(#areaGrad)" />}
 
                 {/* Path Line */}
-                <path d={strokePath} fill="none" stroke="url(#lineGrad)" strokeWidth="3" strokeLinecap="round" />
+                {intakeChart.strokePath && (
+                  <path
+                    d={intakeChart.strokePath}
+                    fill="none"
+                    stroke="url(#lineGrad)"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+                )}
 
-                {/* Data Points Glow circles */}
-                {chartPoints.map((pt, index) => (
-                  <g key={pt.label}>
+                {/* Data Points */}
+                {intakeChart.points.map((pt) => (
+                  <g key={`${pt.label}-${pt.year}`}>
                     <circle
                       cx={pt.x}
                       cy={pt.y}
                       r="7"
                       fill="#7C5CFF"
                       fillOpacity="0.25"
-                      className="transition-all duration-300 hover:r-9"
                     />
                     <circle
                       cx={pt.x}
@@ -238,12 +306,19 @@ function Dashboard() {
                       fontWeight="bold"
                       textAnchor="middle"
                     >
-                      {pt.val}
+                      {pt.count}
                     </text>
                   </g>
                 ))}
               </svg>
+              )}
             </div>
+            {!chartLoading && hasTrendData && (
+              <p className="text-[11px] text-muted-foreground -mt-2">
+                {submissionsByMonth.reduce((n, m) => n + m.count, 0)} responses ·{" "}
+                {clientsByMonth.reduce((n, m) => n + m.count, 0)} new clients (6 mo)
+              </p>
+            )}
           </div>
 
           {/* Status Breakdown Panel */}

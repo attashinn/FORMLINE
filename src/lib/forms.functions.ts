@@ -2,20 +2,16 @@ import { createServerFn, createMiddleware } from "@tanstack/react-start";
 import { z } from "zod";
 import { auth, clerkClient } from "@clerk/tanstack-react-start/server";
 import { sql } from "@/lib/db";
-import crypto from "crypto";
+import { syncOwnerProfileFromClerk, getOwnerEmailByUuid } from "@/lib/clerk.server";
+import { getOwnerNotificationSettings } from "@/lib/settings.functions";
+import { getDeterministicUuid } from "@/lib/owner-id";
 import {
   getEmailConfig,
   sendFormLinkEmail as deliverFormLinkEmail,
   sendSubmissionNotificationEmail,
 } from "./email.server";
+import { createClientFromSource } from "./clients.server";
 import type { FieldType, FormField, FormRecord, SubmissionRecord, SubmissionStatus } from "./forms.types";
-
-/** Map a Clerk user id to a stable, valid UUID v4 for Postgres. */
-function getDeterministicUuid(str: string): string {
-  const hash = crypto.createHash("md5").update(str).digest("hex");
-  const variant = ((parseInt(hash[15], 16) & 0x3) | 0x8).toString(16);
-  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(12, 15)}-${variant}${hash.slice(16, 19)}-${hash.slice(19, 31)}`;
-}
 
 export const requireClerkAuth = createMiddleware({ type: "function" }).server(async ({ next }) => {
   if (process.env.NODE_ENV === "development") {
@@ -41,6 +37,7 @@ export const requireClerkAuth = createMiddleware({ type: "function" }).server(as
     throw new Error("Unauthorized: Not logged in");
   }
   const mappedUuid = getDeterministicUuid(userId);
+  await syncOwnerProfileFromClerk({ clerkUserId: userId, ownerId: mappedUuid });
   return next({
     context: {
       userId: mappedUuid,
@@ -309,10 +306,12 @@ export const submitPublicForm = createServerFn({ method: "POST" })
     const form = forms[0];
     if (!form.is_published) throw new Error("Form unavailable");
 
-    await sql`
+    const submissionRows = await sql`
       INSERT INTO form_submissions (form_id, data, submitter_name, submitter_email)
       VALUES (${form.id}, ${JSON.stringify(data.data)}::jsonb, ${data.submitter_name ?? null}, ${data.submitter_email ?? null})
+      RETURNING id
     `;
+    const submissionId = String(submissionRows[0].id);
 
     try {
       const { executeAutomationsForEvent } = await import("./automations.server");
@@ -320,7 +319,9 @@ export const submitPublicForm = createServerFn({ method: "POST" })
         ownerId: String(form.owner_id),
         trigger: "trigger_form_submit",
         payload: {
+          submissionId,
           formId: String(form.id),
+          form_id: String(form.id),
           formTitle: form.title,
           submitterEmail: data.submitter_email,
           submitterName: data.submitter_name,
@@ -332,12 +333,13 @@ export const submitPublicForm = createServerFn({ method: "POST" })
     }
 
     try {
-      const userListResult = await clerkClient().users.getUserList();
-      const users = Array.isArray(userListResult) ? userListResult : userListResult.data || [];
-      const ownerUser = users.find((u) => getDeterministicUuid(u.id) === form.owner_id);
-      const ownerEmail = ownerUser?.primaryEmailAddress?.emailAddress;
+      const ownerId = String(form.owner_id);
+      const [ownerEmail, prefs] = await Promise.all([
+        getOwnerEmailByUuid(ownerId),
+        getOwnerNotificationSettings(ownerId),
+      ]);
 
-      if (ownerEmail) {
+      if (prefs.notificationFormSubmit && ownerEmail) {
         await sendSubmissionNotificationEmail({
           to: ownerEmail,
           formTitle: form.title,
@@ -345,6 +347,8 @@ export const submitPublicForm = createServerFn({ method: "POST" })
           submitterName: data.submitter_name,
           submitterEmail: data.submitter_email,
         });
+      } else if (!prefs.notificationFormSubmit) {
+        console.log(`[notifications] Skipping form submit email for owner ${ownerId} (disabled in settings)`);
       } else {
         console.warn(`Owner email not found for form owner UUID: ${form.owner_id}`);
       }
@@ -469,65 +473,31 @@ export const convertSubmissionToClient = createServerFn({ method: "POST" })
       notesText += `• ${f.label}: ${ansStr}\n`;
     }
 
-    const clientRows = await sql`
-      INSERT INTO clients (
-        owner_id,
-        full_name,
-        email,
+    const { clientId } = await createClientFromSource({
+      ownerId: context.userId,
+      source: "form_convert",
+      submissionId: String(sub.id),
+      fields: {
+        fullName: fullName || "New Client",
+        email: email || "no-email@example.com",
         phone,
-        company,
+        company: company || "None",
         industry,
         website,
         location,
-        company_size,
-        brand_colors,
-        style_references,
+        companySize,
+        brandColors,
+        styleReferences,
         goals,
         budget,
         deadline,
         services,
-        status
-      )
-      VALUES (
-        ${context.userId}::uuid,
-        ${fullName || "New Client"},
-        ${email || "no-email@example.com"},
-        ${phone},
-        ${company || "None"},
-        ${industry},
-        ${website},
-        ${location},
-        ${companySize},
-        ${JSON.stringify(brandColors)}::jsonb,
-        ${styleReferences},
-        ${goals},
-        ${budget},
-        ${deadline},
-        ${JSON.stringify(services)}::jsonb,
-        'New'
-      )
-      RETURNING id
-    `;
-    const clientId = clientRows[0].id;
+        notes: notesText,
+        status: "New",
+      },
+    });
 
-    await sql`
-      INSERT INTO client_notes (client_id, body)
-      VALUES (${clientId}, ${notesText})
-    `;
-
-    await sql`
-      INSERT INTO client_activity (client_id, label, kind)
-      VALUES (${clientId}, 'Created from form submission', 'submission')
-    `;
-
-    await sql`
-      UPDATE form_submissions
-      SET status = 'Converted',
-          converted_client_id = ${clientId}::uuid
-      WHERE id = ${sub.id}
-    `;
-
-    return { ok: true, clientId: String(clientId) };
+    return { ok: true, clientId };
   });
 
 export const listAllSubmissions = createServerFn({ method: "GET" })

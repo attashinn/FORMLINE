@@ -4,6 +4,7 @@ import { sql } from "@/lib/db";
 import { requireClerkAuth } from "@/lib/forms.functions";
 import type { ActivityEntry, ClientFile, ClientRecord, ClientStatus } from "@/lib/clients-store";
 import { deleteFileFromStorage, getSignedUrl, uploadFileToStorage } from "@/lib/storage.server";
+import { createClientFromSource } from "@/lib/clients.server";
 import crypto from "node:crypto";
 import { sendPortalLinkEmail } from "./email.server";
 
@@ -170,82 +171,32 @@ export const createClient = createServerFn({ method: "POST" })
   .middleware([requireClerkAuth])
   .inputValidator((d: unknown) => ClientPayloadSchema.parse(d))
   .handler(async ({ context, data }) => {
-    const rows = await sql`
-      INSERT INTO clients (
-        owner_id,
-        full_name,
-        email,
-        phone,
-        company,
-        industry,
-        website,
-        location,
-        company_size,
-        brand_colors,
-        style_references,
-        goals,
-        budget,
-        deadline,
-        services,
-        status
-      )
-      VALUES (
-        ${context.userId}::uuid,
-        ${data.fullName},
-        ${data.email},
-        ${data.phone},
-        ${data.company},
-        ${data.industry},
-        ${data.website},
-        ${data.location},
-        ${data.companySize},
-        ${JSON.stringify(data.brandColors)}::jsonb,
-        ${data.styleReferences},
-        ${data.goals},
-        ${data.budget},
-        ${data.deadline},
-        ${JSON.stringify(data.services)}::jsonb,
-        ${data.status ?? "New"}
-      )
-      RETURNING *
-    `;
-    const client = rows[0] as Record<string, unknown>;
+    const { clientId } = await createClientFromSource({
+      ownerId: context.userId,
+      source: "intake",
+      fields: {
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        company: data.company,
+        industry: data.industry,
+        website: data.website,
+        location: data.location,
+        companySize: data.companySize,
+        brandColors: data.brandColors,
+        styleReferences: data.styleReferences,
+        goals: data.goals,
+        budget: data.budget,
+        deadline: data.deadline,
+        services: data.services,
+        notes: data.notes,
+        status: data.status ?? "New",
+        files: data.files,
+      },
+    });
 
-    await sql`
-      INSERT INTO client_notes (client_id, body)
-      VALUES (${client.id}, ${data.notes})
-    `;
-
-    await sql`
-      INSERT INTO client_activity (client_id, label, kind)
-      VALUES (${client.id}, 'Intake form submitted', 'submission')
-    `;
-
-    for (const file of data.files) {
-      await sql`
-        INSERT INTO client_files (client_id, name, size, type, data_url, url)
-        VALUES (${client.id}, ${file.name}, ${file.size}, ${file.type}, ${file.dataUrl ?? null}, ${file.url ?? null})
-      `;
-    }
-
-    try {
-      const { executeAutomationsForEvent } = await import("./automations.server");
-      await executeAutomationsForEvent({
-        ownerId: context.userId,
-        trigger: "trigger_new_client",
-        payload: {
-          clientId: String(client.id),
-          clientName: String(client.full_name),
-          clientEmail: String(client.email),
-          clientCompany: String(client.company),
-          status: String(client.status),
-        },
-      });
-    } catch (e) {
-      console.error("Automation execution error for new client trigger:", e);
-    }
-
-    return hydrateClient(client);
+    const row = await getOwnedClientRow(clientId, context.userId);
+    return hydrateClient(row);
   });
 
 export const updateClient = createServerFn({ method: "POST" })
@@ -330,6 +281,7 @@ export const updateClient = createServerFn({ method: "POST" })
           payload: {
             clientId: data.id,
             newStatus: data.patch.status,
+            status: data.patch.status,
             oldStatus: String(current.status),
             clientName: String(current.fullName),
             clientEmail: String(current.email),

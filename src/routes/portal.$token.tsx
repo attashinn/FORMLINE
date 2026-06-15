@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { getPortalData, submitPortalInfo } from "@/lib/portal.functions";
 import { uploadPortalFile } from "@/lib/clients.functions";
+import { getClientFileHref, fileToBase64 } from "@/lib/client-files";
 import {
   Check,
   Loader2,
@@ -103,11 +104,7 @@ function ClientPortal() {
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const arrayBuffer = await file.arrayBuffer();
-        const bytes = new Uint8Array(arrayBuffer);
-        let binary = "";
-        for (let b = 0; b < bytes.byteLength; b++) binary += String.fromCharCode(bytes[b]);
-        const fileBase64 = btoa(binary);
+        const fileBase64 = await fileToBase64(file);
 
         await uploadFile({
           data: {
@@ -324,7 +321,9 @@ function ClientPortal() {
                 </div>
               ) : (
                 <div className="divide-y divide-white/5">
-                  {files.map((file) => (
+                  {files.map((file) => {
+                    const href = getClientFileHref(file);
+                    return (
                     <div key={file.id} className="py-3 flex items-center justify-between group">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="size-9 rounded bg-white/5 flex items-center justify-center text-white/40">
@@ -340,9 +339,9 @@ function ClientPortal() {
                         </div>
                       </div>
                       <div>
-                        {file.signedUrl ? (
+                        {href ? (
                           <a
-                            href={file.signedUrl}
+                            href={href}
                             download={file.name}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -355,7 +354,8 @@ function ClientPortal() {
                         )}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

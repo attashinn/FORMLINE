@@ -65,7 +65,7 @@ const DEFS: NodeDef[] = [
   { kind: "trigger_form_submit",   label: "Form Submitted",   desc: "Fires when a form gets a new response",    category: "trigger",   color: "#22c55e", bg: "rgba(34,197,94,0.12)"  },
   { kind: "trigger_new_client",    label: "New Client",       desc: "Fires when a client is created",           category: "trigger",   color: "#22c55e", bg: "rgba(34,197,94,0.12)"  },
   { kind: "trigger_status_change", label: "Status Changed",   desc: "Fires when a client's status changes",     category: "trigger",   color: "#22c55e", bg: "rgba(34,197,94,0.12)"  },
-  { kind: "trigger_schedule",      label: "Schedule",         desc: "Runs on a time-based schedule",            category: "trigger",   color: "#22c55e", bg: "rgba(34,197,94,0.12)"  },
+  { kind: "trigger_schedule",      label: "Weekly Schedule",  desc: "Weekly digest via cron (/api/cron/weekly-summary). Only weekly is supported today.", category: "trigger",   color: "#22c55e", bg: "rgba(34,197,94,0.12)"  },
   // Actions
   { kind: "action_send_email",     label: "Send Email",       desc: "Send an email to a recipient",             category: "action",    color: "#7C5CFF", bg: "rgba(124,92,255,0.12)" },
   { kind: "action_create_client",  label: "Create Client",    desc: "Convert a response into a client",         category: "action",    color: "#7C5CFF", bg: "rgba(124,92,255,0.12)" },
@@ -505,24 +505,31 @@ function Canvas({ auto, onChange, forms }: { auto: Automation; onChange: (a: Aut
                       <option key={f.id} value={f.id}>{f.title}</option>
                     ))}
                   </select>
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    Only submissions for the selected form will run this automation.
+                  </p>
                 </Field>
               )}
               {selNode.kind === "trigger_schedule" && (
-                <Field label="Schedule">
+                <Field label="Schedule (cron)">
                   <select
                     value={selNode.config?.schedule || "weekly"}
                     onChange={e => updateNodeConfig(selNode.id, { schedule: e.target.value })}
                     className={INPUT}
                   >
-                    <option value="weekly">Every Monday 9am</option>
-                    <option value="daily">Daily at 9am</option>
-                    <option value="hourly">Every hour</option>
-                    <option value="cron">Custom (cron)</option>
+                    <option value="weekly">Weekly digest (Monday 9am via cron)</option>
+                    <option value="daily" disabled>Daily at 9am (not yet supported)</option>
+                    <option value="hourly" disabled>Every hour (not yet supported)</option>
+                    <option value="cron" disabled>Custom cron (not yet supported)</option>
                   </select>
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
+                    Only weekly is active. Configure an external scheduler to call{" "}
+                    <code className="text-[10px]">GET /api/cron/weekly-summary</code>.
+                  </p>
                 </Field>
               )}
               {selNode.kind === "trigger_status_change" && (
-                <Field label="New status">
+                <Field label="When status becomes">
                   <select
                     value={selNode.config?.status || "any"}
                     onChange={e => updateNodeConfig(selNode.id, { status: e.target.value })}
@@ -533,6 +540,9 @@ function Canvas({ auto, onChange, forms }: { auto: Automation; onChange: (a: Aut
                     <option value="In Progress">→ In Progress</option>
                     <option value="Completed">→ Completed</option>
                   </select>
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    Matches the client&apos;s new status after the change.
+                  </p>
                 </Field>
               )}
 

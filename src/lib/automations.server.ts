@@ -1,6 +1,46 @@
 import { sql } from "@/lib/db";
 import { sendAutomationEmail } from "./email.server";
+import { createClientFromSource } from "./clients.server";
 import { CanvasNode, normalizeAutomation } from "./automations.functions";
+
+/**
+ * Returns whether a trigger node should run for the given event payload.
+ * Backward-compatible: missing config values behave as "any" / "weekly".
+ */
+export function shouldRunTrigger(
+  node: CanvasNode,
+  triggerKind: string,
+  payload: Record<string, unknown>,
+): boolean {
+  if (node.kind !== triggerKind) return false;
+
+  if (triggerKind === "trigger_form_submit") {
+    const formId = node.config?.formId;
+    if (!formId || formId === "any") return true;
+    const payloadFormId = payload.formId ?? payload.form_id;
+    if (!payloadFormId) return true;
+    return String(formId) === String(payloadFormId);
+  }
+
+  if (triggerKind === "trigger_status_change") {
+    const statusFilter = node.config?.status;
+    if (!statusFilter || statusFilter === "any") return true;
+    const newStatus = payload.newStatus ?? payload.status;
+    if (!newStatus) return true;
+    return String(statusFilter) === String(newStatus);
+  }
+
+  if (triggerKind === "trigger_schedule") {
+    const schedule = node.config?.schedule ?? "weekly";
+    if (schedule === "weekly") return true;
+    console.warn(
+      `[Automation Engine] Schedule "${schedule}" is not supported yet. Only "weekly" runs via /api/cron/weekly-summary. Skipping trigger node ${node.id}.`,
+    );
+    return false;
+  }
+
+  return true;
+}
 
 // Engine Function (Direct call, not a Server Function)
 export async function executeAutomationsForEvent(opts: {
@@ -24,6 +64,13 @@ export async function executeAutomationsForEvent(opts: {
     let triggerExecuted = false;
 
     for (const triggerNode of triggers) {
+      if (!shouldRunTrigger(triggerNode, opts.trigger, opts.payload)) {
+        console.log(
+          `[Automation Engine] Skipping trigger node ${triggerNode.id} in "${auto.name}" — config filter not matched`,
+        );
+        continue;
+      }
+
       const visited = new Set<string>();
       const queue: string[] = [triggerNode.id];
 
@@ -114,26 +161,29 @@ async function executeNode(node: CanvasNode, ownerId: string, payload: Record<st
     const email = payload.submitterEmail || payload.clientEmail || payload.email || "no-email@example.com";
     const company = payload.company || payload.clientCompany || payload.companyName || "Unknown Company";
 
-    console.log(`[Automation Engine] Creating new client: name=${fullName}, email=${email}, company=${company}`);
+    console.log(`[Automation Engine] Creating client: name=${fullName}, email=${email}, company=${company}`);
 
-    const rows = await sql`
-      INSERT INTO clients (owner_id, full_name, email, company, status)
-      VALUES (${ownerId}::uuid, ${fullName}, ${email}, ${company}, 'New')
-      RETURNING id
-    `;
+    const { clientId, isNew } = await createClientFromSource({
+      ownerId,
+      source: "automation",
+      submissionId: payload.submissionId ? String(payload.submissionId) : undefined,
+      fields: {
+        fullName: String(fullName),
+        email: String(email),
+        company: String(company),
+        status: "New",
+      },
+    });
 
-    if (rows.length > 0) {
-      const clientId = rows[0].id;
-      payload.clientId = clientId; // save to payload for downstream nodes
-      payload.clientName = fullName;
-      payload.clientEmail = email;
-      payload.clientCompany = company;
+    payload.clientId = clientId;
+    payload.clientName = fullName;
+    payload.clientEmail = email;
+    payload.clientCompany = company;
 
-      await sql`
-        INSERT INTO client_activity (client_id, label, kind)
-        VALUES (${clientId}, 'Created via Automation', 'system')
-      `;
+    if (!isNew) {
+      console.log(`[Automation Engine] Reused existing client ${clientId} (email dedup)`);
     }
+
     return true;
   }
 
