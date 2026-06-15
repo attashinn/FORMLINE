@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { sql } from "@/lib/db";
+import { sql } from "@/lib/db.server";
 import { sendAutomationEmail } from "@/lib/email.server";
 import { normalizeAutomation } from "@/lib/automations.functions";
 import { shouldRunTrigger } from "@/lib/automations.server";
 import { getOwnerProfileByUuid } from "@/lib/clerk.server";
-import { getOwnerNotificationSettings } from "@/lib/settings.functions";
+import { getOwnerNotificationSettings } from "@/lib/settings.server";
 import crypto from "node:crypto";
 
 function verifyCronRequest(request: Request): boolean {

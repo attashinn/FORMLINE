@@ -14,30 +14,42 @@ if (!process.env.DATABASE_URL) {
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const schema = readFileSync(schemaPath, "utf8");
 
+/** Strip line comments so semicolons inside `-- ...` do not split statements. */
+function stripLineComments(sql) {
+  return sql
+    .split("\n")
+    .map((line) => {
+      const idx = line.indexOf("--");
+      return idx === -1 ? line : line.slice(0, idx);
+    })
+    .join("\n");
+}
+
 /** Split SQL on semicolons outside dollar-quoted blocks (e.g. DO $tag$ ... $tag$). */
 function splitSqlStatements(sql) {
+  const cleaned = stripLineComments(sql);
   const statements = [];
   let current = "";
   let i = 0;
 
-  while (i < sql.length) {
-    if (sql[i] === "$") {
+  while (i < cleaned.length) {
+    if (cleaned[i] === "$") {
       const tagStart = i;
       i++;
-      while (i < sql.length && sql[i] !== "$") i++;
+      while (i < cleaned.length && cleaned[i] !== "$") i++;
       i++;
-      const tag = sql.slice(tagStart, i);
-      const closeIdx = sql.indexOf(tag, i);
+      const tag = cleaned.slice(tagStart, i);
+      const closeIdx = cleaned.indexOf(tag, i);
       if (closeIdx === -1) {
-        current += sql.slice(tagStart);
+        current += cleaned.slice(tagStart);
         break;
       }
-      current += sql.slice(tagStart, closeIdx + tag.length);
+      current += cleaned.slice(tagStart, closeIdx + tag.length);
       i = closeIdx + tag.length;
       continue;
     }
 
-    if (sql[i] === ";") {
+    if (cleaned[i] === ";") {
       const trimmed = current.trim();
       if (trimmed.length > 0 && !trimmed.split("\n").every((line) => line.trim().startsWith("--") || line.trim() === "")) {
         statements.push(trimmed);
@@ -47,7 +59,7 @@ function splitSqlStatements(sql) {
       continue;
     }
 
-    current += sql[i];
+    current += cleaned[i];
     i++;
   }
 

@@ -43,12 +43,12 @@ import {
 export const Route = createFileRoute("/_authenticated/clients/$id")({
   head: ({ params }) => ({
     meta: [
-      { title: `Client · ${params.id} — Client Profile Hub` },
+      { title: `Client · ${params.id} — Formline` },
       {
         name: "description",
         content: "Full client profile with project requirements, files, notes and activity.",
       },
-      { property: "og:title", content: "Client profile — Client Profile Hub" },
+      { property: "og:title", content: "Client profile — Formline" },
       {
         property: "og:description",
         content: "Full client profile with project requirements, files, notes and activity.",

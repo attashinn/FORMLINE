@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { sql } from "@/lib/db";
-import { requireClerkAuth } from "@/lib/forms.functions";
+import { sql } from "@/lib/db.server";
+import { requireClerkAuth } from "@/lib/auth.middleware";
 import type { ActivityEntry, ClientFile, ClientRecord, ClientStatus } from "@/lib/clients-store";
 import { deleteFileFromStorage, getSignedUrl, uploadFileToStorage } from "@/lib/storage.server";
 import { createClientFromSource } from "@/lib/clients.server";

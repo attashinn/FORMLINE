@@ -34,7 +34,7 @@ export const Route = createFileRoute("/")({
           "Build branded intake forms, share them with one link, and collect client responses in a beautifully organized dashboard.",
       },
       { property: "og:title", content: "Formline" },
-      { property: "og:description", content: "Send forms. Get responses. Stay in control." },
+      { property: "og:image", content: "/formline-brand.png" },
     ],
   }),
   component: Home,
@@ -54,7 +54,18 @@ function Home() {
   const isSignedIn = clerkSignedIn || isBypassed;
 
   return (
-    <div className="dark min-h-screen bg-[#0A0A0B] text-[#E5E5E7] antialiased">
+    <div className="dark relative min-h-screen bg-[#0A0A0B] text-[#E5E5E7] antialiased">
+      {/* Brand background */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 bg-[#0A0A0B] bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url(/formline-brand.png)" }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 bg-gradient-to-b from-[#0A0A0B]/55 via-[#0A0A0B]/82 to-[#0A0A0B]"
+      />
+
       <LandingNavbar isSignedIn={isSignedIn} />
 
       {/* hero */}

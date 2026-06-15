@@ -3,6 +3,7 @@ import { useAuth as useClerkAuth, useUser } from "@clerk/tanstack-react-start";
 type FormattedUser = {
   id: string;
   email: string;
+  imageUrl: string | null;
   user_metadata: {
     full_name: string;
   };
@@ -16,6 +17,7 @@ export function useAuth() {
     ? {
         id: user.id,
         email: user.primaryEmailAddress?.emailAddress ?? "",
+        imageUrl: user.imageUrl ?? null,
         user_metadata: {
           full_name: user.fullName ?? "",
         },

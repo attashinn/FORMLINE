@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
-      { title: "Profile Settings — Client Profile Hub" },
+      { title: "Profile Settings — Formline" },
       {
         name: "description",
         content: "Customize your workspace profile details and security credentials.",

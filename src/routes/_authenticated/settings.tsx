@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -14,7 +14,9 @@ import {
   Check,
   Loader2,
 } from "@/components/heroicons";
-import { getSettings, updateSettings, type OwnerSettings } from "@/lib/settings.functions";
+import { getSettings, updateSettings } from "@/lib/settings.functions";
+import type { OwnerSettings } from "@/lib/settings.types";
+import { UserAvatar } from "@/components/user-avatar";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -81,10 +83,17 @@ function SettingsPage() {
   const fetchSettings = useServerFn(getSettings);
   const saveSettings = useServerFn(updateSettings);
 
-  const { data: settings, isLoading: settingsLoading } = useQuery({
+  const {
+    data: settings,
+    isLoading: settingsLoading,
+    isError: settingsError,
+    refetch: refetchSettings,
+  } = useQuery({
     queryKey: ["owner-settings"],
     queryFn: () => fetchSettings(),
     staleTime: 30_000,
+    retry: false,
+    throwOnError: false,
   });
 
   const settingsMutation = useMutation({
@@ -111,9 +120,6 @@ function SettingsPage() {
 
   const fullName = user?.user_metadata?.full_name || "";
   const email = user?.email || "";
-  const initials = fullName
-    ? fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
-    : email.slice(0, 2).toUpperCase();
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-[400px] before:bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(124,92,255,0.18),transparent_60%)] before:content-['']">
@@ -179,17 +185,20 @@ function SettingsPage() {
                       <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">Profile</h2>
                     </div>
                     <div className="p-6 flex items-center gap-5">
-                      <div className="grid size-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-tr from-[#7C5CFF] to-[#A28CFF] text-white font-semibold text-xl">
-                        {initials}
-                      </div>
+                      <UserAvatar
+                        name={fullName}
+                        email={email}
+                        imageUrl={user?.imageUrl}
+                        className="size-16 text-xl"
+                      />
                       <div>
                         <div className="text-lg font-semibold text-foreground">{fullName || "No name set"}</div>
                         <div className="mt-0.5 text-sm text-muted-foreground">{email}</div>
                         <div className="mt-3 text-xs text-muted-foreground">
                           To update your name, email, or password, go to the{" "}
-                          <a href="/profile" className="text-[#7C5CFF] underline underline-offset-2 hover:opacity-80">
+                          <Link to="/profile" className="text-[#7C5CFF] underline underline-offset-2 hover:opacity-80">
                             Profile page
-                          </a>
+                          </Link>
                           .
                         </div>
                       </div>
@@ -250,6 +259,19 @@ function SettingsPage() {
                       <div className="flex items-center justify-center gap-2 px-6 py-12 text-sm text-muted-foreground">
                         <Loader2 className="size-4 animate-spin" />
                         Loading preferences…
+                      </div>
+                    ) : settingsError ? (
+                      <div className="px-6 py-8 text-center">
+                        <p className="text-sm text-muted-foreground">
+                          Could not load notification preferences.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => refetchSettings()}
+                          className="mt-3 text-sm font-medium text-[#7C5CFF] hover:opacity-80"
+                        >
+                          Try again
+                        </button>
                       </div>
                     ) : (
                     <div className="divide-y divide-hairline">
@@ -332,9 +354,9 @@ function SettingsPage() {
                     <div className="text-sm text-muted-foreground">
                       <span className="font-medium text-foreground">Your data is protected. </span>
                       All authentication and session management is handled by Clerk. To manage your password, 2FA, or connected accounts, visit the{" "}
-                      <a href="/profile" className="text-[#7C5CFF] underline underline-offset-2 hover:opacity-80">
+                      <Link to="/profile" className="text-[#7C5CFF] underline underline-offset-2 hover:opacity-80">
                         Profile page
-                      </a>
+                      </Link>
                       .
                     </div>
                   </div>

@@ -1,50 +1,18 @@
-import { createServerFn, createMiddleware } from "@tanstack/react-start";
+import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { auth, clerkClient } from "@clerk/tanstack-react-start/server";
-import { sql } from "@/lib/db";
-import { syncOwnerProfileFromClerk, getOwnerEmailByUuid } from "@/lib/clerk.server";
-import { getOwnerNotificationSettings } from "@/lib/settings.functions";
-import { getDeterministicUuid } from "@/lib/owner-id";
+import { clerkClient } from "@clerk/tanstack-react-start/server";
+import { sql } from "@/lib/db.server";
+import { getOwnerEmailByUuid } from "@/lib/clerk.server";
+import { requireClerkAuth } from "@/lib/auth.middleware";
 import {
   getEmailConfig,
   sendFormLinkEmail as deliverFormLinkEmail,
   sendSubmissionNotificationEmail,
+  listOutboxEmails,
+  deleteOutboxEmail,
 } from "./email.server";
 import { createClientFromSource } from "./clients.server";
 import type { FieldType, FormField, FormRecord, SubmissionRecord, SubmissionStatus } from "./forms.types";
-
-export const requireClerkAuth = createMiddleware({ type: "function" }).server(async ({ next }) => {
-  if (process.env.NODE_ENV === "development") {
-    try {
-      const { getRequestUrl, getCookie } = await import("@tanstack/react-start/server");
-      const url = getRequestUrl();
-      const bypassCookie = getCookie("bypass");
-      if (url.searchParams.get("bypass") === "true" || bypassCookie === "true") {
-        const mockUserId = "00000000-0000-0000-0000-000000000000";
-        return next({
-          context: {
-            userId: mockUserId,
-            clerkUserId: "mock_clerk_user",
-          },
-        });
-      }
-    } catch (e) {
-      console.warn("Failed to get request context inside requireClerkAuth:", e);
-    }
-  }
-  const { userId } = await auth();
-  if (!userId) {
-    throw new Error("Unauthorized: Not logged in");
-  }
-  const mappedUuid = getDeterministicUuid(userId);
-  await syncOwnerProfileFromClerk({ clerkUserId: userId, ownerId: mappedUuid });
-  return next({
-    context: {
-      userId: mappedUuid,
-      clerkUserId: userId,
-    },
-  });
-});
 
 const FieldSchema = z.object({
   id: z.string().min(1).max(64),
@@ -334,6 +302,7 @@ export const submitPublicForm = createServerFn({ method: "POST" })
 
     try {
       const ownerId = String(form.owner_id);
+      const { getOwnerNotificationSettings } = await import("@/lib/settings.server");
       const [ownerEmail, prefs] = await Promise.all([
         getOwnerEmailByUuid(ownerId),
         getOwnerNotificationSettings(ownerId),
@@ -525,74 +494,14 @@ export const listAllSubmissions = createServerFn({ method: "GET" })
 
 export const listSimulatedEmails = createServerFn({ method: "GET" })
   .middleware([requireClerkAuth])
-  .handler(async () => {
-    const fs = await import("node:fs/promises");
-    const path = await import("node:path");
-
-    const dir = path.join(process.cwd(), "public", "emails");
-    try {
-      const files = await fs.readdir(dir);
-      const list = [];
-      for (const file of files) {
-        if (!file.endsWith(".html")) continue;
-        const filePath = path.join(dir, file);
-        const html = await fs.readFile(filePath, "utf8");
-
-        const metadataMatch = html.match(/<!-- email-metadata: (\{.*?\}) -->/);
-        if (metadataMatch) {
-          try {
-            const meta = JSON.parse(metadataMatch[1]);
-            list.push({
-              filename: file,
-              to: String(meta.to),
-              subject: String(meta.subject),
-              sentAt: String(meta.sentAt),
-              previewUrl: `/emails/${file}`,
-            });
-            continue;
-          } catch {
-            // fallback
-          }
-        }
-
-        // Fallback to filename parsing
-        const parts = file.split("-");
-        const timestamp = parseInt(parts[0], 10);
-        const sentAt = isNaN(timestamp)
-          ? new Date().toISOString()
-          : new Date(timestamp).toISOString();
-        const subjectRaw = parts.slice(1).join("-").replace(".html", "");
-        const subject = subjectRaw
-          ? subjectRaw.charAt(0).toUpperCase() + subjectRaw.slice(1).replace(/-/g, " ")
-          : "Simulated Email";
-
-        list.push({
-          filename: file,
-          to: "client@example.com",
-          subject,
-          sentAt,
-          previewUrl: `/emails/${file}`,
-        });
-      }
-
-      return list.sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
-    } catch {
-      return [];
-    }
-  });
+  .handler(async () => listOutboxEmails());
 
 export const deleteSimulatedEmail = createServerFn({ method: "POST" })
   .middleware([requireClerkAuth])
   .inputValidator((d: { filename: string }) => z.object({ filename: z.string() }).parse(d))
   .handler(async ({ data }) => {
-    const fs = await import("node:fs/promises");
-    const path = await import("node:path");
-
-    const dir = path.join(process.cwd(), "public", "emails");
-    const base = path.basename(data.filename);
-    const filePath = path.join(dir, base);
     try {
-      await fs.unlink(filePath);
+      await deleteOutboxEmail(data.filename);
       return { ok: true };
     } catch (err) {
       throw new Error(`Failed to delete email file: ${(err as Error).message}`);

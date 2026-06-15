@@ -11,13 +11,13 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/intake")({
   head: () => ({
     meta: [
-      { title: "Client Intake — Client Profile Hub" },
+      { title: "Client Intake — Formline" },
       {
         name: "description",
         content:
           "A calm, multi-step intake form to capture every detail of a new client engagement.",
       },
-      { property: "og:title", content: "Client Intake — Client Profile Hub" },
+      { property: "og:title", content: "Client Intake — Formline" },
       {
         property: "og:description",
         content:

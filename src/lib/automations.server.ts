@@ -1,4 +1,4 @@
-import { sql } from "@/lib/db";
+import { sql } from "@/lib/db.server";
 import { sendAutomationEmail } from "./email.server";
 import { createClientFromSource } from "./clients.server";
 import { CanvasNode, normalizeAutomation } from "./automations.functions";

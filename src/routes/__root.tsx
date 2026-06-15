@@ -77,42 +77,42 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Client Profile Hub — Onboarding for agencies & freelancers" },
+      { title: "Formline — Send forms. Get responses. Stay in control." },
       {
         name: "description",
         content:
           "A premium client onboarding workspace. Multi-step intake, organized profiles, and a calm, editorial dashboard for creative agencies and freelancers.",
       },
-      { name: "author", content: "Client Profile Hub" },
+      { name: "author", content: "Formline" },
       {
         property: "og:title",
-        content: "Client Profile Hub — Onboarding for agencies & freelancers",
+        content: "Formline — Send forms. Get responses. Stay in control.",
       },
       {
         property: "og:description",
         content:
-          "Client Hub is a modern SaaS web application for agencies and freelancers to streamline client intake and management.",
+          "Formline is a modern SaaS workspace for agencies and freelancers to build forms, collect responses, and manage client intake.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       {
         name: "twitter:title",
-        content: "Client Profile Hub — Onboarding for agencies & freelancers",
+        content: "Formline — Send forms. Get responses. Stay in control.",
       },
       {
         name: "description",
         content:
-          "Client Hub is a modern SaaS web application for agencies and freelancers to streamline client intake and management.",
+          "Formline is a modern SaaS workspace for agencies and freelancers to build forms, collect responses, and manage client intake.",
       },
       {
         name: "twitter:description",
         content:
-          "Client Hub is a modern SaaS web application for agencies and freelancers to streamline client intake and management.",
+          "Formline is a modern SaaS workspace for agencies and freelancers to build forms, collect responses, and manage client intake.",
       },
     ],
     links: [
       { rel: "icon", type: "image/png", href: "/favicon.png" },
-      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      { rel: "apple-touch-icon", href: "/favicon.png" },
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },

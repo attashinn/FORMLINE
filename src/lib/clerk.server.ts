@@ -1,5 +1,5 @@
 import { clerkClient } from "@clerk/tanstack-react-start/server";
-import { sql } from "@/lib/db";
+import { sql } from "@/lib/db.server";
 import { getDeterministicUuid } from "@/lib/owner-id";
 
 export type OwnerProfile = {

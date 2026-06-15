@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { sql } from "@/lib/db";
-import { requireClerkAuth } from "@/lib/forms.functions";
+import { sql } from "@/lib/db.server";
+import { requireClerkAuth } from "@/lib/auth.middleware";
 
 async function verifyClientOwnership(clientId: string, userId: string) {
   const rows = await sql`

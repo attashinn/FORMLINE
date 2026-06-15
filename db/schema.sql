@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS client_files (
   name TEXT NOT NULL,
   size INTEGER NOT NULL DEFAULT 0,
   type TEXT NOT NULL DEFAULT '',
-  data_url TEXT, -- legacy intake embeds; new uploads use url (storage.server.ts)
+  data_url TEXT, -- legacy intake embeds, new uploads use url (storage.server.ts)
   url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

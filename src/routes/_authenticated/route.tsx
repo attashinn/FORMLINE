@@ -8,6 +8,9 @@ import { ClientsProvider } from "@/lib/clients-store";
 import { Logo } from "@/components/logo";
 import { Bars3, X, Users, FileText, ClipboardList, LogOut, Plus, LayoutGrid, Mail, BarChart3, Settings, Zap } from "@/components/heroicons";
 import { AnimatePresence, motion } from "framer-motion";
+import { DevBypassBanner } from "@/components/dev-bypass-banner";
+import { UserAvatar } from "@/components/user-avatar";
+import { DEV_BYPASS_OWNER_ID } from "@/lib/dev-bypass";
 
 const getAuthUser = createServerFn({ method: "GET" }).handler(async () => {
   if (process.env.NODE_ENV === "development") {
@@ -16,7 +19,7 @@ const getAuthUser = createServerFn({ method: "GET" }).handler(async () => {
       const url = getRequestUrl();
       const bypassCookie = getCookie("bypass");
       if (url.searchParams.get("bypass") === "true" || bypassCookie === "true") {
-        return { userId: "00000000-0000-0000-0000-000000000000" };
+        return { userId: DEV_BYPASS_OWNER_ID };
       }
     } catch (e) {
       console.warn("Failed to get request context inside dev bypass:", e);
@@ -49,17 +52,6 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
     await signOut();
     navigate({ to: "/auth" });
   }
-
-  const initials = user?.user_metadata?.full_name
-    ? user.user_metadata.full_name
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()
-    : user?.email
-      ? user.email.slice(0, 2).toUpperCase()
-      : "U";
 
   const fullName = user?.user_metadata?.full_name || user?.email || "User";
   const email = user?.email || "";
@@ -160,9 +152,12 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                 : "hover:bg-white/5"
             }`}
           >
-            <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-tr from-[#7C5CFF] to-[#A28CFF] text-white font-semibold text-sm">
-              {initials}
-            </div>
+            <UserAvatar
+              name={fullName}
+              email={email}
+              imageUrl={user?.imageUrl}
+              className="size-9 text-sm"
+            />
             <div className="min-w-0">
               <div className="truncate text-xs font-semibold text-foreground group-hover:text-white transition-colors">{fullName}</div>
               <div className="truncate text-[10px] text-muted-foreground">{email}</div>
@@ -206,6 +201,7 @@ function AuthenticatedLayout() {
 
       {/* Main Content Pane */}
       <div className="flex-1 md:pl-64 flex flex-col min-w-0 min-h-screen">
+        <DevBypassBanner />
         {/* Mobile top bar */}
         <header className="flex md:hidden items-center justify-between h-16 px-4 border-b border-hairline bg-surface/40 backdrop-blur-lg sticky top-0 z-40">
           <Link to="/dashboard" className="flex items-center">

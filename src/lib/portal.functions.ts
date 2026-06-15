@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { sql } from "@/lib/db";
+import { sql } from "@/lib/db.server";
 import { getSignedUrl } from "@/lib/storage.server";
 
 // Public server functions (authenticated via token)

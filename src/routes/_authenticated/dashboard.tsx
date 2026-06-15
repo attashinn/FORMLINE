@@ -22,7 +22,7 @@ import {
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard — Client Profile Hub" },
+      { title: "Dashboard — Formline" },
       {
         name: "description",
         content: "All active client partnerships, intake status, and pipeline at a glance.",
@@ -539,7 +539,7 @@ function Dashboard() {
       <footer className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         <div className="flex flex-col items-start justify-between gap-4 border-t border-hairline pt-8 text-sm text-muted-foreground md:flex-row md:items-center">
           <p className="font-serif text-base italic">A quiet workspace for loud ideas.</p>
-          <p>© {new Date().getFullYear()} Client Profile Hub</p>
+          <p>© {new Date().getFullYear()} Formline</p>
         </div>
       </footer>
     </div>
