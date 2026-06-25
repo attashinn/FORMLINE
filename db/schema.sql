@@ -140,3 +140,37 @@ CREATE TABLE IF NOT EXISTS owner_settings (
   notification_form_published BOOLEAN NOT NULL DEFAULT false,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id UUID NOT NULL,
+  message TEXT NOT NULL,
+  link TEXT,
+  read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS notifications_owner_id_idx ON notifications (owner_id);
+CREATE INDEX IF NOT EXISTS notifications_owner_read_idx ON notifications (owner_id, read);
+
+CREATE TABLE IF NOT EXISTS invoices (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id UUID NOT NULL,
+  client_id UUID NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+  title TEXT NOT NULL DEFAULT 'Invoice',
+  amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'Unpaid',
+  due_date TIMESTAMPTZ,
+  issued_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT invoices_status_check CHECK (status IN ('Unpaid', 'Paid', 'Overdue'))
+);
+
+CREATE INDEX IF NOT EXISTS invoices_owner_id_idx ON invoices (owner_id);
+CREATE INDEX IF NOT EXISTS invoices_client_id_idx ON invoices (client_id);
+
+-- Alter table to support country and currency selection
+ALTER TABLE owner_settings ADD COLUMN IF NOT EXISTS country_code TEXT DEFAULT 'US';
+ALTER TABLE owner_settings ADD COLUMN IF NOT EXISTS currency_code TEXT DEFAULT 'USD';
+

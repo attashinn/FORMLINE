@@ -51,6 +51,9 @@ import globeAltSvg from "../../heroicons-master/optimized/24/outline/globe-alt.s
 import userSvg from "../../heroicons-master/optimized/24/outline/user.svg?raw";
 import xMarkSvg from "../../heroicons-master/optimized/24/outline/x-mark.svg?raw";
 import cogSvg from "../../heroicons-master/optimized/24/outline/cog-6-tooth.svg?raw";
+import creditCardSvg from "../../heroicons-master/optimized/24/outline/credit-card.svg?raw";
+import bellSvg from "../../heroicons-master/optimized/24/outline/bell.svg?raw";
+import pencilSvg from "../../heroicons-master/optimized/24/outline/pencil.svg?raw";
 
 export type HeroIcon = ComponentType<SVGProps<SVGSVGElement>>;
 export type LucideIcon = HeroIcon;
@@ -131,6 +134,10 @@ export const X = createIcon("X", xMarkSvg);
 export const Zap = createIcon("Zap", boltSvg);
 export const Bars3 = createIcon("Bars3", bars3Svg);
 export const Settings = createIcon("Settings", cogSvg);
+export const CreditCard = createIcon("CreditCard", creditCardSvg);
+export const Bell = createIcon("Bell", bellSvg);
+export const Pencil = createIcon("Pencil", pencilSvg);
+export const CheckCircle = createIcon("CheckCircle", checkCircleSvg);
 
 export const ChevronDownIcon = ChevronDown;
 export const ChevronLeftIcon = ChevronLeft;

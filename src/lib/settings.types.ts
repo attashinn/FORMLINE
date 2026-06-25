@@ -4,4 +4,7 @@ export type OwnerSettings = {
   notificationWeeklyDigest: boolean;
   notificationClientStatusChange: boolean;
   notificationFormPublished: boolean;
+  countryCode: string | null;
+  currencyCode: string | null;
 };
+

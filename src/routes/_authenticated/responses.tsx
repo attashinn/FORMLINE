@@ -16,6 +16,14 @@ import {
 } from "@/components/heroicons";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 
 export const Route = createFileRoute("/_authenticated/responses")({
   head: () => ({
@@ -289,19 +297,32 @@ function ResponsesPage() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Status</span>
-                    <select
+                    <Select
                       value={selected.status}
-                      onChange={(e) => {
-                        const newStatus = e.target.value as SubmissionStatus;
-                        updateMut.mutate({ id: selected.id, status: newStatus });
-                        setSelected({ ...selected, status: newStatus });
+                      onValueChange={(val: SubmissionStatus) => {
+                        updateMut.mutate({ id: selected.id, status: val });
+                        setSelected({ ...selected, status: val });
                       }}
-                      className="h-7 rounded-lg bg-surface px-2 text-xs ring-1 ring-hairline outline-none"
                     >
-                      {STATUS_OPTIONS.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="h-8 w-28 rounded-lg border-0 bg-surface px-2 text-left text-xs shadow-none ring-1 ring-hairline transition-all hover:bg-surface-muted hover:ring-foreground/20 focus:ring-2 focus:ring-foreground/20 cursor-pointer">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent
+                        position="popper"
+                        sideOffset={6}
+                        className="z-[60] min-w-[120px] rounded-xl border-0 p-1 bg-popover shadow-2xl ring-1 ring-hairline"
+                      >
+                        {STATUS_OPTIONS.map((s) => (
+                          <SelectItem
+                            key={s}
+                            value={s}
+                            className="cursor-pointer rounded-lg py-1.5 pl-2 pr-8 focus:bg-secondary text-xs text-foreground"
+                          >
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 

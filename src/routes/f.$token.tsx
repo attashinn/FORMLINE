@@ -162,9 +162,9 @@ function PublicForm() {
                   value={String(values[f.id] ?? "")}
                   onChange={(e) => set(f.id, e.target.value)}
                 >
-                  <option value="">Select…</option>
+                  <option value="" className="bg-[#0A0A0B] text-white">Select…</option>
                   {(f.options ?? []).map((o) => (
-                    <option key={o} value={o}>
+                    <option key={o} value={o} className="bg-[#0A0A0B] text-white">
                       {o}
                     </option>
                   ))}

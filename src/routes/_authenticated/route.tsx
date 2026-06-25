@@ -6,11 +6,13 @@ import { useClerk } from "@clerk/tanstack-react-start";
 import { useAuth } from "@/hooks/use-auth";
 import { ClientsProvider } from "@/lib/clients-store";
 import { Logo } from "@/components/logo";
-import { Bars3, X, Users, FileText, ClipboardList, LogOut, Plus, LayoutGrid, Mail, BarChart3, Settings, Zap } from "@/components/heroicons";
+import { Bars3, X, Users, FileText, ClipboardList, LogOut, Plus, LayoutGrid, Mail, BarChart3, Settings, Zap, CreditCard } from "@/components/heroicons";
 import { AnimatePresence, motion } from "framer-motion";
 import { DevBypassBanner } from "@/components/dev-bypass-banner";
 import { UserAvatar } from "@/components/user-avatar";
 import { DEV_BYPASS_OWNER_ID } from "@/lib/dev-bypass";
+import { NotificationsPanel } from "@/components/notifications-panel";
+import { GlobalSearch } from "@/components/global-search";
 
 const getAuthUser = createServerFn({ method: "GET" }).handler(async () => {
   if (process.env.NODE_ENV === "development") {
@@ -78,6 +80,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       title: "Communications",
       items: [
         { to: "/emails", label: "Emails", icon: Mail },
+        { to: "/invoices", label: "Invoices", icon: CreditCard },
       ],
     },
     {
@@ -90,6 +93,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className="flex flex-col h-full bg-surface-muted/30">
+      <GlobalSearch />
       {/* Navigation Links */}
       <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
         {sections.map((section) => (
@@ -189,10 +193,11 @@ function AuthenticatedLayout() {
     <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 z-30 border-r border-hairline bg-surface/40 backdrop-blur-lg">
-        <div className="flex h-16 shrink-0 items-center px-6 border-b border-hairline">
+        <div className="flex h-16 shrink-0 items-center justify-between px-6 border-b border-hairline">
           <Link to="/dashboard" className="flex items-center">
             <Logo />
           </Link>
+          <NotificationsPanel />
         </div>
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           <SidebarContent />
@@ -207,13 +212,16 @@ function AuthenticatedLayout() {
           <Link to="/dashboard" className="flex items-center">
             <Logo />
           </Link>
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors border border-hairline"
-            aria-label="Toggle navigation"
-          >
-            <Bars3 className="size-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <NotificationsPanel />
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors border border-hairline"
+              aria-label="Toggle navigation"
+            >
+              <Bars3 className="size-5" />
+            </button>
+          </div>
         </header>
 
         {/* Mobile Navigation Drawer */}

@@ -11,6 +11,8 @@ const SettingsPatchSchema = z.object({
   notificationWeeklyDigest: z.boolean().optional(),
   notificationClientStatusChange: z.boolean().optional(),
   notificationFormPublished: z.boolean().optional(),
+  countryCode: z.string().max(10).nullable().optional(),
+  currencyCode: z.string().max(10).nullable().optional(),
 });
 
 export const getSettings = createServerFn({ method: "GET" })
@@ -37,7 +39,12 @@ export const updateSettings = createServerFn({ method: "POST" })
         data.notificationClientStatusChange ?? current.notificationClientStatusChange,
       notificationFormPublished:
         data.notificationFormPublished ?? current.notificationFormPublished,
+      countryCode:
+        data.countryCode !== undefined ? data.countryCode : current.countryCode,
+      currencyCode:
+        data.currencyCode !== undefined ? data.currencyCode : current.currencyCode,
     };
 
     return writeOwnerSettings(context.userId, next);
   });
+

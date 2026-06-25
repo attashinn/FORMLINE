@@ -7,6 +7,14 @@ import { useClients } from "@/lib/clients-store";
 import { uploadClientFile } from "@/lib/clients.functions";
 import { fileToBase64 } from "@/lib/client-files";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 
 export const Route = createFileRoute("/_authenticated/intake")({
   head: () => ({
@@ -139,11 +147,17 @@ function Intake() {
     return () => clearTimeout(t);
   }, [draft]);
 
+  const [touched, setTouched] = useState<Partial<Record<keyof Draft, boolean>>>({});
+
   const errors = useMemo(() => {
     const e: Partial<Record<keyof Draft, string>> = {};
     if (step === 0) {
       if (!draft.fullName.trim()) e.fullName = "Full name is required";
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(draft.email)) e.email = "Enter a valid email";
+      if (!draft.email.trim()) {
+        e.email = "Email is required";
+      } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(draft.email)) {
+        e.email = "Enter a valid email";
+      }
       if (!draft.company.trim()) e.company = "Company is required";
     }
     if (step === 1) {
@@ -155,7 +169,35 @@ function Intake() {
     return e;
   }, [draft, step]);
 
-  const canContinue = Object.keys(errors).length === 0;
+  const stepFields: Record<number, (keyof Draft)[]> = {
+    0: ["fullName", "email", "company"],
+    1: ["industry"],
+    2: [],
+    3: ["goals"],
+    4: []
+  };
+
+  const handleContinue = () => {
+    const fields = stepFields[step] || [];
+    const newTouched = { ...touched };
+    let hasError = false;
+    for (const f of fields) {
+      newTouched[f] = true;
+      if (errors[f]) {
+        hasError = true;
+      }
+    }
+    setTouched(newTouched);
+    if (hasError) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+    setStep((s) => Math.min(STEPS.length - 1, s + 1));
+  };
+
+  const blurHandler = (key: keyof Draft) => {
+    setTouched((prev) => ({ ...prev, [key]: true }));
+  };
 
   function set<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((d) => ({ ...d, [key]: value }));
@@ -269,36 +311,39 @@ function Intake() {
           {/* Step content */}
           {step === 0 && (
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <Field label="Full name" error={errors.fullName}>
+              <Field label="Full name" error={touched.fullName ? errors.fullName : undefined}>
                 <input
-                  className={inputCls}
+                  className={getInputCls(touched.fullName && !!errors.fullName)}
                   value={draft.fullName}
                   onChange={(e) => set("fullName", e.target.value)}
+                  onBlur={() => blurHandler("fullName")}
                   placeholder="Jane Doe"
                 />
               </Field>
-              <Field label="Email" error={errors.email}>
+              <Field label="Email" error={touched.email ? errors.email : undefined}>
                 <input
                   type="email"
-                  className={inputCls}
+                  className={getInputCls(touched.email && !!errors.email)}
                   value={draft.email}
                   onChange={(e) => set("email", e.target.value)}
+                  onBlur={() => blurHandler("email")}
                   placeholder="jane@studio.com"
                 />
               </Field>
               <Field label="Phone">
                 <input
-                  className={inputCls}
+                  className={getInputCls()}
                   value={draft.phone}
                   onChange={(e) => set("phone", e.target.value)}
                   placeholder="+1 555 0100"
                 />
               </Field>
-              <Field label="Company" error={errors.company}>
+              <Field label="Company" error={touched.company ? errors.company : undefined}>
                 <input
-                  className={inputCls}
+                  className={getInputCls(touched.company && !!errors.company)}
                   value={draft.company}
                   onChange={(e) => set("company", e.target.value)}
+                  onBlur={() => blurHandler("company")}
                   placeholder="Studio Northwood"
                 />
               </Field>
@@ -307,21 +352,37 @@ function Intake() {
 
           {step === 1 && (
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <Field label="Industry" error={errors.industry}>
-                <select
-                  className={inputCls}
+              <Field label="Industry" error={touched.industry ? errors.industry : undefined}>
+                <Select
                   value={draft.industry}
-                  onChange={(e) => set("industry", e.target.value)}
+                  onValueChange={(val) => {
+                    set("industry", val);
+                    blurHandler("industry");
+                  }}
                 >
-                  <option value="">Select an industry…</option>
-                  {INDUSTRIES.map((i) => (
-                    <option key={i}>{i}</option>
-                  ))}
-                </select>
+                  <SelectTrigger className="h-10 w-full rounded-lg border-0 bg-surface px-3 text-left text-sm shadow-none ring-1 ring-hairline transition-all hover:bg-surface-muted hover:ring-foreground/20 focus:ring-2 focus:ring-foreground/20 cursor-pointer">
+                    <SelectValue placeholder="Select an industry…" />
+                  </SelectTrigger>
+                  <SelectContent
+                    position="popper"
+                    sideOffset={6}
+                    className="z-50 min-w-[200px] rounded-xl border-0 p-1.5 bg-popover shadow-2xl ring-1 ring-hairline max-h-60 overflow-y-auto"
+                  >
+                    {INDUSTRIES.map((i) => (
+                      <SelectItem
+                        key={i}
+                        value={i}
+                        className="cursor-pointer rounded-lg py-2 pl-2.5 pr-8 focus:bg-secondary text-sm text-foreground"
+                      >
+                        {i}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
               <Field label="Website">
                 <input
-                  className={inputCls}
+                  className={getInputCls()}
                   value={draft.website}
                   onChange={(e) => set("website", e.target.value)}
                   placeholder="studio.com"
@@ -329,25 +390,36 @@ function Intake() {
               </Field>
               <Field label="Location">
                 <input
-                  className={inputCls}
+                  className={getInputCls()}
                   value={draft.location}
                   onChange={(e) => set("location", e.target.value)}
                   placeholder="Brooklyn, NY"
                 />
               </Field>
               <Field label="Company size">
-                <select
-                  className={inputCls}
+                <Select
                   value={draft.companySize}
-                  onChange={(e) => set("companySize", e.target.value)}
+                  onValueChange={(val) => set("companySize", val)}
                 >
-                  <option value="">Select…</option>
-                  <option>Solo</option>
-                  <option>2–10</option>
-                  <option>11–50</option>
-                  <option>51–200</option>
-                  <option>200+</option>
-                </select>
+                  <SelectTrigger className="h-10 w-full rounded-lg border-0 bg-surface px-3 text-left text-sm shadow-none ring-1 ring-hairline transition-all hover:bg-surface-muted hover:ring-foreground/20 focus:ring-2 focus:ring-foreground/20 cursor-pointer">
+                    <SelectValue placeholder="Select…" />
+                  </SelectTrigger>
+                  <SelectContent
+                    position="popper"
+                    sideOffset={6}
+                    className="z-50 min-w-[150px] rounded-xl border-0 p-1.5 bg-popover shadow-2xl ring-1 ring-hairline"
+                  >
+                    {["Solo", "2–10", "11–50", "51–200", "200+"].map((size) => (
+                      <SelectItem
+                        key={size}
+                        value={size}
+                        className="cursor-pointer rounded-lg py-2 pl-2.5 pr-8 focus:bg-secondary text-sm text-foreground"
+                      >
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
             </div>
           )}
@@ -403,7 +475,7 @@ function Intake() {
 
               <Field label="Style references">
                 <textarea
-                  className={inputCls + " min-h-[110px] resize-none"}
+                  className={getInputCls() + " min-h-[110px] resize-none"}
                   value={draft.styleReferences}
                   onChange={(e) => set("styleReferences", e.target.value)}
                   placeholder="Inspiration, mood, references…"
@@ -449,18 +521,19 @@ function Intake() {
 
           {step === 3 && (
             <div className="space-y-6">
-              <Field label="Project goals" error={errors.goals}>
+              <Field label="Project goals" error={touched.goals ? errors.goals : undefined}>
                 <textarea
-                  className={inputCls + " min-h-[140px] resize-none"}
+                  className={getInputCls(touched.goals && !!errors.goals) + " min-h-[140px] resize-none"}
                   value={draft.goals}
                   onChange={(e) => set("goals", e.target.value)}
+                  onBlur={() => blurHandler("goals")}
                   placeholder="What does success look like?"
                 />
               </Field>
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <Field label="Budget">
                   <input
-                    className={inputCls}
+                    className={getInputCls()}
                     value={draft.budget}
                     onChange={(e) => set("budget", e.target.value)}
                     placeholder="$10,000 – $15,000"
@@ -469,7 +542,7 @@ function Intake() {
                 <Field label="Deadline">
                   <input
                     type="date"
-                    className={inputCls}
+                    className={getInputCls()}
                     value={draft.deadline}
                     onChange={(e) => set("deadline", e.target.value)}
                   />
@@ -504,7 +577,7 @@ function Intake() {
             <div className="space-y-6">
               <Field label="Internal notes (optional)">
                 <textarea
-                  className={inputCls + " min-h-[110px] resize-none"}
+                  className={getInputCls() + " min-h-[110px] resize-none"}
                   value={draft.notes}
                   onChange={(e) => set("notes", e.target.value)}
                   placeholder="Anything the team should know."
@@ -553,9 +626,8 @@ function Intake() {
             {step < STEPS.length - 1 ? (
               <button
                 type="button"
-                disabled={!canContinue}
-                onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}
-                className="inline-flex h-10 items-center gap-2 rounded-lg bg-foreground px-5 text-sm font-medium text-background ring-1 ring-foreground transition-colors hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={handleContinue}
+                className="inline-flex h-10 items-center gap-2 rounded-lg bg-foreground px-5 text-sm font-medium text-background ring-1 ring-foreground transition-all hover:opacity-90 active:scale-95 shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
               >
                 Continue <ArrowRight className="size-4" />
               </button>
@@ -564,7 +636,7 @@ function Intake() {
                 type="button"
                 onClick={submit}
                 disabled={submitting}
-                className="inline-flex h-10 items-center gap-2 rounded-lg bg-foreground px-5 text-sm font-medium text-background ring-1 ring-foreground transition-colors hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-2 rounded-lg bg-foreground px-5 text-sm font-medium text-background ring-1 ring-foreground transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
               >
                 {submitting ? "Submitting…" : "Submit intake"} <Check className="size-4" />
               </button>
@@ -576,8 +648,11 @@ function Intake() {
   );
 }
 
-const inputCls =
-  "h-10 w-full rounded-lg bg-surface-muted px-3 text-sm text-foreground ring-1 ring-hairline outline-none transition-shadow placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-foreground/80";
+const getInputCls = (hasError?: boolean) =>
+  "h-10 w-full rounded-lg bg-surface-muted px-3 text-sm text-foreground ring-1 outline-none transition-all placeholder:text-muted-foreground/60 focus:outline-none " +
+  (hasError
+    ? "ring-destructive/60 focus:ring-2 focus:ring-destructive"
+    : "ring-hairline focus:ring-2 focus:ring-foreground/80");
 
 function Field({
   label,

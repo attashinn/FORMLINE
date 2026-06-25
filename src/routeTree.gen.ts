@@ -17,6 +17,7 @@ import { Route as FTokenRouteImport } from './routes/f.$token'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedResponsesRouteImport } from './routes/_authenticated/responses'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedIntakeRouteImport } from './routes/_authenticated/intake'
 import { Route as AuthenticatedEmailsRouteImport } from './routes/_authenticated/emails'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -65,6 +66,11 @@ const AuthenticatedResponsesRoute = AuthenticatedResponsesRouteImport.update({
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedInvoicesRoute = AuthenticatedInvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedIntakeRoute = AuthenticatedIntakeRouteImport.update({
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/emails': typeof AuthenticatedEmailsRoute
   '/intake': typeof AuthenticatedIntakeRoute
+  '/invoices': typeof AuthenticatedInvoicesRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/responses': typeof AuthenticatedResponsesRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -147,6 +154,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/emails': typeof AuthenticatedEmailsRoute
   '/intake': typeof AuthenticatedIntakeRoute
+  '/invoices': typeof AuthenticatedInvoicesRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/responses': typeof AuthenticatedResponsesRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -168,6 +176,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/emails': typeof AuthenticatedEmailsRoute
   '/_authenticated/intake': typeof AuthenticatedIntakeRoute
+  '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/responses': typeof AuthenticatedResponsesRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/emails'
     | '/intake'
+    | '/invoices'
     | '/profile'
     | '/responses'
     | '/settings'
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/emails'
     | '/intake'
+    | '/invoices'
     | '/profile'
     | '/responses'
     | '/settings'
@@ -228,6 +239,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/emails'
     | '/_authenticated/intake'
+    | '/_authenticated/invoices'
     | '/_authenticated/profile'
     | '/_authenticated/responses'
     | '/_authenticated/settings'
@@ -305,6 +317,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/invoices': {
+      id: '/_authenticated/invoices'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof AuthenticatedInvoicesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/intake': {
@@ -386,6 +405,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEmailsRoute: typeof AuthenticatedEmailsRoute
   AuthenticatedIntakeRoute: typeof AuthenticatedIntakeRoute
+  AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedResponsesRoute: typeof AuthenticatedResponsesRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -401,6 +421,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEmailsRoute: AuthenticatedEmailsRoute,
   AuthenticatedIntakeRoute: AuthenticatedIntakeRoute,
+  AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedResponsesRoute: AuthenticatedResponsesRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,

@@ -81,6 +81,19 @@ export const createClientTask = createServerFn({ method: "POST" })
       VALUES (${data.clientId}, ${`Task created: "${data.title}"`}, 'update')
     `;
 
+    try {
+      const clientRows = await sql`SELECT company FROM clients WHERE id = ${data.clientId} LIMIT 1`;
+      const clientCompany = clientRows[0]?.company ? String(clientRows[0].company) : "Client";
+      const { createNotification } = await import("./notifications.server");
+      await createNotification(
+        context.userId,
+        `Task "${data.title}" created for client "${clientCompany}"`,
+        `/clients/${data.clientId}`
+      );
+    } catch (e) {
+      console.error("Failed to trigger task create notification:", e);
+    }
+
     return {
       id: String(task.id),
       clientId: String(task.clientId),
@@ -131,6 +144,19 @@ export const updateClientTask = createServerFn({ method: "POST" })
         INSERT INTO client_activity (client_id, label, kind)
         VALUES (${updatedTask.clientId}, ${label}, 'update')
       `;
+
+      try {
+        const clientRows = await sql`SELECT company FROM clients WHERE id = ${updatedTask.clientId} LIMIT 1`;
+        const clientCompany = clientRows[0]?.company ? String(clientRows[0].company) : "Client";
+        const { createNotification } = await import("./notifications.server");
+        await createNotification(
+          context.userId,
+          `Task "${updatedTask.title}" marked as ${data.completed ? "completed" : "incomplete"} for client "${clientCompany}"`,
+          `/clients/${updatedTask.clientId}`
+        );
+      } catch (e) {
+        console.error("Failed to trigger task status update notification:", e);
+      }
     }
 
     return {
@@ -157,6 +183,19 @@ export const deleteClientTask = createServerFn({ method: "POST" })
       INSERT INTO client_activity (client_id, label, kind)
       VALUES (${task.client_id}, ${`Task deleted: "${task.title}"`}, 'update')
     `;
+
+    try {
+      const clientRows = await sql`SELECT company FROM clients WHERE id = ${task.client_id} LIMIT 1`;
+      const clientCompany = clientRows[0]?.company ? String(clientRows[0].company) : "Client";
+      const { createNotification } = await import("./notifications.server");
+      await createNotification(
+        context.userId,
+        `Task "${task.title}" deleted for client "${clientCompany}"`,
+        `/clients/${task.client_id}`
+      );
+    } catch (e) {
+      console.error("Failed to trigger task delete notification:", e);
+    }
 
     return { ok: true };
   });

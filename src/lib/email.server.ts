@@ -461,6 +461,180 @@ export async function listOutboxEmails(): Promise<{
   }
 }
 
+export async function sendInvoiceEmail(opts: {
+  to: string;
+  clientName: string;
+  clientCompany: string;
+  invoiceTitle: string;
+  invoiceId: string;
+  amount: number;
+  status: string;
+  dueDate?: string;
+  notes?: string;
+  lineItems?: Array<{ description: string; qty: number; unitPrice: number }>;
+  senderCompany?: string;
+  appUrl?: string;
+}) {
+  const { apiKey, fromEmail, appUrl: configAppUrl } = getEmailConfig();
+  const appUrl = opts.appUrl || configAppUrl;
+
+  const lineItems = opts.lineItems && opts.lineItems.length > 0 ? opts.lineItems : [
+    { description: opts.invoiceTitle, qty: 1, unitPrice: opts.amount },
+  ];
+
+  const totalAmount = lineItems.reduce((s, li) => s + li.qty * li.unitPrice, 0);
+
+  const lineItemsHtml = lineItems
+    .map(
+      (li) => `
+      <tr>
+        <td style="padding: 10px 0; font-size: 14px; color: #111; border-bottom: 1px solid #f0f0f0;">${escapeHtml(li.description)}</td>
+        <td style="padding: 10px 0; font-size: 14px; color: #555; text-align: center; border-bottom: 1px solid #f0f0f0;">${li.qty}</td>
+        <td style="padding: 10px 0; font-size: 14px; color: #555; text-align: right; border-bottom: 1px solid #f0f0f0;">$${li.unitPrice.toFixed(2)}</td>
+        <td style="padding: 10px 0; font-size: 14px; font-weight: 600; color: #111; text-align: right; border-bottom: 1px solid #f0f0f0;">$${(li.qty * li.unitPrice).toFixed(2)}</td>
+      </tr>`,
+    )
+    .join("\n");
+
+  const dueDateStr = opts.dueDate
+    ? new Date(opts.dueDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    : null;
+
+  const subject = opts.status === "Paid"
+    ? `Receipt: ${opts.invoiceTitle} — $${totalAmount.toFixed(2)}`
+    : `Invoice: ${opts.invoiceTitle} — $${totalAmount.toFixed(2)}`;
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /><title>${escapeHtml(subject)}</title></head>
+<body style="margin:0;padding:0;background:#f6f6f6;font-family:Manrope,system-ui,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f6;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.07);">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);padding:32px 40px;">
+            <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
+              ${escapeHtml(opts.senderCompany || "Invoice")}
+            </p>
+            <p style="margin:8px 0 0;font-size:13px;color:rgba(255,255,255,0.5);">
+              ${opts.status === "Paid" ? "RECEIPT" : "INVOICE"} · ${escapeHtml(opts.invoiceTitle.toUpperCase())}
+            </p>
+          </td>
+        </tr>
+
+        <!-- Info strip -->
+        <tr>
+          <td style="background:#7C5CFF;padding:16px 40px;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td>
+                  <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.1em;">Billed To</p>
+                  <p style="margin:4px 0 0;font-size:15px;font-weight:600;color:#fff;">${escapeHtml(opts.clientName)}</p>
+                  <p style="margin:2px 0 0;font-size:13px;color:rgba(255,255,255,0.7);">${escapeHtml(opts.clientCompany)}</p>
+                </td>
+                <td align="right">
+                  <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.1em;">
+                    ${opts.status === "Paid" ? "Amount Paid" : "Amount Due"}
+                  </p>
+                  <p style="margin:4px 0 0;font-size:28px;font-weight:700;color:#fff;">$${totalAmount.toFixed(2)}</p>
+                  ${opts.status === "Paid"
+                    ? `<p style="margin:6px 0 0;display:inline-block;font-size:10px;font-weight:700;color:#10b981;background:#ffffff;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:0.05em;">PAID RECEIPT</p>`
+                    : dueDateStr ? `<p style="margin:2px 0 0;font-size:12px;color:rgba(255,255,255,0.7);">Due ${dueDateStr}</p>` : ""
+                  }
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Line Items -->
+        <tr>
+          <td style="padding:32px 40px;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <thead>
+                <tr style="border-bottom:2px solid #f0f0f0;">
+                  <th style="padding:0 0 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#999;text-align:left;">Description</th>
+                  <th style="padding:0 0 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#999;text-align:center;">Qty</th>
+                  <th style="padding:0 0 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#999;text-align:right;">Unit Price</th>
+                  <th style="padding:0 0 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#999;text-align:right;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${lineItemsHtml}
+                <tr>
+                  <td colspan="3" style="padding:16px 0 0;font-size:14px;font-weight:700;color:#111;text-align:right;">
+                    ${opts.status === "Paid" ? "Total Paid" : "Total Due"}
+                  </td>
+                  <td style="padding:16px 0 0;font-size:20px;font-weight:700;color:#7C5CFF;text-align:right;">$${totalAmount.toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            ${opts.notes ? `
+            <div style="margin-top:24px;padding:16px;background:#f9f9fb;border-radius:10px;border-left:4px solid #7C5CFF;">
+              <p style="margin:0 0 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#7C5CFF;">Notes</p>
+              <p style="margin:0;font-size:14px;color:#444;line-height:1.6;">${escapeHtml(opts.notes)}</p>
+            </div>` : ""}
+
+            <div style="margin-top:32px;text-align:center;">
+              <a href="${appUrl}/invoices" style="display:inline-block;background:#7C5CFF;color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:600;">View Invoice Online</a>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:20px 40px;background:#f9f9fb;border-top:1px solid #f0f0f0;">
+            <p style="margin:0;font-size:12px;color:#999;text-align:center;">
+              Sent via Formline on behalf of ${escapeHtml(opts.senderCompany || "your service provider")}
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  const { previewUrl, updateMetadata } = await logEmailToOutbox({
+    to: opts.to,
+    subject,
+    html: htmlContent,
+  });
+
+  if (!apiKey || !fromEmail) {
+    throw new Error(
+      `Email not configured. Simulated invoice email locally. Preview at: ${appUrl}${previewUrl}`,
+    );
+  }
+
+  const resend = new Resend(apiKey);
+  const result = await resend.emails.send({
+    from: fromEmail,
+    to: opts.to,
+    subject,
+    html: htmlContent,
+  });
+
+  const finalized = await finalizeResendDelivery(updateMetadata, result);
+
+  if (!finalized.ok) {
+    const message = finalized.error?.message || "Failed to send email";
+    if (fromEmail.includes("@resend.dev")) {
+      throw new Error(
+        `Resend testing restriction: "${message}". Simulated preview at: ${appUrl}${previewUrl}`,
+      );
+    }
+    throw new Error(`${message}. Simulated preview at: ${appUrl}${previewUrl}`);
+  }
+
+  return finalized.data;
+}
+
 export async function deleteOutboxEmail(filename: string) {
   const base = path.basename(filename).replace(/\.html$/, "");
   const htmlPath = path.join(OUTBOX_DIR, `${base}.html`);

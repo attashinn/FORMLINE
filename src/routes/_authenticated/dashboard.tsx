@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { useClients, formatRelative, type ClientStatus } from "@/lib/clients-store";
 import { listForms, listAllSubmissions } from "@/lib/forms.functions";
+import { listInvoices } from "@/lib/invoices.functions";
 import {
   buildMonthlyAreaChart,
   countItemsByMonth,
@@ -16,8 +17,11 @@ import {
   ArrowUpRight,
   Sparkles,
   Users,
-  LayoutGrid,
+  CreditCard,
 } from "@/components/heroicons";
+import { getSettings } from "@/lib/settings.functions";
+import { getCurrencySymbol } from "@/lib/localization";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -54,6 +58,14 @@ function Dashboard() {
   const { clients, isLoading } = useClients();
   const list = useServerFn(listForms);
   const listSubs = useServerFn(listAllSubmissions);
+  const getInvoices = useServerFn(listInvoices);
+
+  const fetchSettings = useServerFn(getSettings);
+  const { data: settings } = useQuery({
+    queryKey: ["owner-settings"],
+    queryFn: () => fetchSettings(),
+  });
+  const currencySymbol = getCurrencySymbol(settings?.currencyCode);
 
   const {
     data: forms = [],
@@ -72,6 +84,19 @@ function Dashboard() {
     retry: 1,
     staleTime: 0,
   });
+
+  const { data: invoices = [] } = useQuery({
+    queryKey: ["invoices"],
+    queryFn: () => getInvoices(),
+    retry: 1,
+    staleTime: 30000,
+  });
+
+  const revenueStats = useMemo(() => {
+    const paid = invoices.filter((i) => i.status === "Paid").reduce((s, i) => s + i.amount, 0);
+    const outstanding = invoices.filter((i) => i.status !== "Paid").reduce((s, i) => s + i.amount, 0);
+    return { paid, outstanding };
+  }, [invoices]);
 
   const chartLoading = isLoading || subsLoading;
 
@@ -164,14 +189,20 @@ function Dashboard() {
         {/* Stats strip */}
         <section className="mb-8 sm:mb-10 grid grid-cols-2 divide-hairline rounded-2xl bg-surface ring-1 ring-hairline md:grid-cols-4 divide-x [&>*:nth-child(n+3)]:border-t [&>*:nth-child(n+3)]:border-hairline md:[&>*:nth-child(n+3)]:border-t-0">
           {[
-            { label: "Your forms", value: formsLoading ? "…" : forms.length },
-            {
-              label: "Published forms",
-              value: formsLoading ? "…" : forms.filter((f) => f.is_published).length,
-            },
             { label: "Total clients", value: isLoading ? "…" : stats.total },
             { label: "Open engagements", value: isLoading ? "…" : stats.open },
+            {
+              label: "Paid Revenue",
+              value: `${currencySymbol}${revenueStats.paid.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+              color: "text-emerald-400",
+            },
+            {
+              label: "Outstanding",
+              value: `${currencySymbol}${revenueStats.outstanding.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+              color: revenueStats.outstanding > 0 ? "text-amber-400" : undefined,
+            },
           ].map((s, i) => (
+
             <motion.div
               key={s.label}
               initial={{ opacity: 0, y: 12 }}
@@ -182,7 +213,7 @@ function Dashboard() {
               <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 {s.label}
               </div>
-              <div className="mt-2 font-serif text-4xl leading-none">{s.value}</div>
+              <div className={`mt-2 font-serif text-4xl leading-none ${'color' in s && s.color ? s.color : ""}`}>{s.value}</div>
             </motion.div>
           ))}
         </section>

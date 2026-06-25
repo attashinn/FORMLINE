@@ -7,6 +7,8 @@ const DEFAULT_SETTINGS: OwnerSettings = {
   notificationWeeklyDigest: false,
   notificationClientStatusChange: true,
   notificationFormPublished: false,
+  countryCode: "US",
+  currencyCode: "USD",
 };
 
 function isMissingRelationError(err: unknown): boolean {
@@ -25,6 +27,8 @@ function normalizeSettingsRow(row: Record<string, unknown>): OwnerSettings {
     notificationWeeklyDigest: Boolean(row.notification_weekly_digest),
     notificationClientStatusChange: row.notification_client_status_change !== false,
     notificationFormPublished: Boolean(row.notification_form_published),
+    countryCode: row.country_code ? String(row.country_code) : "US",
+    currencyCode: row.currency_code ? String(row.currency_code) : "USD",
   };
 }
 
@@ -62,6 +66,8 @@ export async function writeOwnerSettings(ownerId: string, next: OwnerSettings): 
         notification_weekly_digest,
         notification_client_status_change,
         notification_form_published,
+        country_code,
+        currency_code,
         updated_at
       )
       VALUES (
@@ -71,6 +77,8 @@ export async function writeOwnerSettings(ownerId: string, next: OwnerSettings): 
         ${next.notificationWeeklyDigest},
         ${next.notificationClientStatusChange},
         ${next.notificationFormPublished},
+        ${next.countryCode},
+        ${next.currencyCode},
         NOW()
       )
       ON CONFLICT (owner_id) DO UPDATE SET
@@ -79,6 +87,8 @@ export async function writeOwnerSettings(ownerId: string, next: OwnerSettings): 
         notification_weekly_digest = EXCLUDED.notification_weekly_digest,
         notification_client_status_change = EXCLUDED.notification_client_status_change,
         notification_form_published = EXCLUDED.notification_form_published,
+        country_code = EXCLUDED.country_code,
+        currency_code = EXCLUDED.currency_code,
         updated_at = NOW()
     `;
   } catch (err) {
@@ -92,3 +102,4 @@ export async function writeOwnerSettings(ownerId: string, next: OwnerSettings): 
 
   return next;
 }
+

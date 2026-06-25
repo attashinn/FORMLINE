@@ -196,7 +196,18 @@ export const createClient = createServerFn({ method: "POST" })
     });
 
     const row = await getOwnedClientRow(clientId, context.userId);
-    return hydrateClient(row);
+    const client = await hydrateClient(row);
+    try {
+      const { createNotification } = await import("./notifications.server");
+      await createNotification(
+        context.userId,
+        `New client intake submitted for ${client.company}`,
+        `/clients/${client.id}`
+      );
+    } catch (e) {
+      console.error("Failed to trigger client intake notification:", e);
+    }
+    return client;
   });
 
 export const updateClient = createServerFn({ method: "POST" })
@@ -273,6 +284,16 @@ export const updateClient = createServerFn({ method: "POST" })
     }
 
     if (data.patch.status && data.patch.status !== current.status) {
+      try {
+        const { createNotification } = await import("./notifications.server");
+        await createNotification(
+          context.userId,
+          `Client "${current.company}" status updated to "${data.patch.status}"`,
+          `/clients/${data.id}`
+        );
+      } catch (e) {
+        console.error("Failed to trigger client status change notification:", e);
+      }
       try {
         const { executeAutomationsForEvent } = await import("./automations.server");
         await executeAutomationsForEvent({
@@ -404,7 +425,7 @@ export const uploadClientFile = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     // verify client ownership
-    await getOwnedClientRow(data.clientId, context.userId);
+    const client = await getOwnedClientRow(data.clientId, context.userId);
 
     const buffer = Buffer.from(data.fileBase64, "base64");
     const storagePathOrUrl = await uploadFileToStorage(buffer, data.fileName, data.fileType);
@@ -419,6 +440,17 @@ export const uploadClientFile = createServerFn({ method: "POST" })
       INSERT INTO client_activity (client_id, label, kind)
       VALUES (${data.clientId}, ${`File "${data.fileName}" uploaded`}, 'update')
     `;
+
+    try {
+      const { createNotification } = await import("./notifications.server");
+      await createNotification(
+        context.userId,
+        `File "${data.fileName}" uploaded for client "${client.company}"`,
+        `/clients/${data.clientId}`
+      );
+    } catch (e) {
+      console.error("Failed to trigger file upload notification:", e);
+    }
 
     const newFile = normalizeFile(rows[0] as Record<string, unknown>);
     if (newFile.url) {
@@ -442,7 +474,7 @@ export const uploadPortalFile = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const clientRows = await sql`
-      SELECT id, full_name, company FROM clients WHERE portal_token = ${data.token} LIMIT 1
+      SELECT id, owner_id, full_name, company FROM clients WHERE portal_token = ${data.token} LIMIT 1
     `;
     if (clientRows.length === 0) throw new Error("Invalid portal token");
     const client = clientRows[0];
@@ -460,6 +492,17 @@ export const uploadPortalFile = createServerFn({ method: "POST" })
       INSERT INTO client_activity (client_id, label, kind)
       VALUES (${client.id}, ${`File "${data.fileName}" uploaded via Client Portal`}, 'update')
     `;
+
+    try {
+      const { createNotification } = await import("./notifications.server");
+      await createNotification(
+        String(client.owner_id),
+        `Client "${client.company}" uploaded file "${data.fileName}" via Portal`,
+        `/clients/${client.id}`
+      );
+    } catch (e) {
+      console.error("Failed to trigger portal file upload notification:", e);
+    }
 
     const newFile = normalizeFile(rows[0] as Record<string, unknown>);
     if (newFile.url) {

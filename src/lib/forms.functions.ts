@@ -282,6 +282,17 @@ export const submitPublicForm = createServerFn({ method: "POST" })
     const submissionId = String(submissionRows[0].id);
 
     try {
+      const { createNotification } = await import("./notifications.server");
+      await createNotification(
+        String(form.owner_id),
+        `New submission on form "${form.title}" from ${data.submitter_name ?? "anonymous"}`,
+        "/responses"
+      );
+    } catch (e) {
+      console.error("Failed to trigger in-app notification for form submission:", e);
+    }
+
+    try {
       const { executeAutomationsForEvent } = await import("./automations.server");
       await executeAutomationsForEvent({
         ownerId: String(form.owner_id),

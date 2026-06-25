@@ -18,6 +18,15 @@ import { getSettings, updateSettings } from "@/lib/settings.functions";
 import type { OwnerSettings } from "@/lib/settings.types";
 import { UserAvatar } from "@/components/user-avatar";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { COUNTRIES, CURRENCIES } from "@/lib/localization";
+
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -224,6 +233,86 @@ function SettingsPage() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Regional Settings */}
+                  <div className="rounded-2xl bg-surface ring-1 ring-hairline overflow-hidden">
+                    <div className="px-6 py-4 border-b border-hairline bg-surface-muted/50">
+                      <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">Regional Settings</h2>
+                      <p className="mt-1 text-xs text-muted-foreground">Configure your workspace location and currency.</p>
+                    </div>
+                    <div className="p-6 space-y-4">
+                      {/* Country Selection */}
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Workspace Country</label>
+                        <Select
+                          value={settings?.countryCode || "US"}
+                          onValueChange={(code) => {
+                            const country = COUNTRIES.find(c => c.code === code);
+                            const patch: Partial<OwnerSettings> = { countryCode: code };
+                            if (country) {
+                              patch.currencyCode = country.defaultCurrency;
+                            }
+                            settingsMutation.mutate(patch);
+                          }}
+                          disabled={settingsMutation.isPending}
+                        >
+                          <SelectTrigger className="h-10 w-full rounded-lg border-0 bg-background px-3 text-left text-sm shadow-none ring-1 ring-hairline transition-all hover:bg-surface-muted hover:ring-foreground/20 focus:ring-2 focus:ring-foreground/20 cursor-pointer">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent
+                            position="popper"
+                            sideOffset={6}
+                            className="z-50 min-w-[240px] rounded-xl border-0 p-1.5 bg-popover shadow-2xl ring-1 ring-hairline max-h-60 overflow-y-auto"
+                          >
+                            {COUNTRIES.map((c) => (
+                              <SelectItem
+                                key={c.code}
+                                value={c.code}
+                                className="cursor-pointer rounded-lg py-2 pl-2.5 pr-8 focus:bg-secondary text-sm text-foreground"
+                              >
+                                <span className="flex items-center gap-2">
+                                  <span>{c.flag}</span>
+                                  <span>{c.name}</span>
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Currency Selection */}
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Primary Currency</label>
+                        <Select
+                          value={settings?.currencyCode || "USD"}
+                          onValueChange={(code) => {
+                            settingsMutation.mutate({ currencyCode: code });
+                          }}
+                          disabled={settingsMutation.isPending}
+                        >
+                          <SelectTrigger className="h-10 w-full rounded-lg border-0 bg-background px-3 text-left text-sm shadow-none ring-1 ring-hairline transition-all hover:bg-surface-muted hover:ring-foreground/20 focus:ring-2 focus:ring-foreground/20 cursor-pointer">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent
+                            position="popper"
+                            sideOffset={6}
+                            className="z-50 min-w-[240px] rounded-xl border-0 p-1.5 bg-popover shadow-2xl ring-1 ring-hairline max-h-60 overflow-y-auto"
+                          >
+                            {CURRENCIES.map((cur) => (
+                              <SelectItem
+                                key={cur.code}
+                                value={cur.code}
+                                className="cursor-pointer rounded-lg py-2 pl-2.5 pr-8 focus:bg-secondary text-sm text-foreground"
+                              >
+                                {cur.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+
 
                   {/* Danger zone */}
                   <div className="rounded-2xl bg-surface ring-1 ring-destructive/20 overflow-hidden">
