@@ -59,7 +59,7 @@ export function Features() {
                 <div className="absolute -inset-6 bg-[radial-gradient(50%_50%_at_75%_50%,rgba(124,92,255,0.18),transparent_100%)]" />
                 <div className="relative aspect-[76/59] overflow-hidden border border-white/10 bg-[#0A0A0B]">
                   <img
-                    src="/hero-dashboard.png"
+                    src="/hero-dashboard.svg"
                     alt="Formline dashboard showing active clients, filters, and intake responses"
                     width={1207}
                     height={929}

@@ -54,6 +54,7 @@ import {
   type InvoiceRecord,
   type InvoiceLineItem,
 } from "@/lib/invoices.functions";
+import { InvoiceLineItemsEditor, invoiceInputClass } from "@/components/invoice-line-items-editor";
 
 export const Route = createFileRoute("/_authenticated/clients/$id")({
   head: ({ params }) => ({
@@ -192,7 +193,6 @@ function ClientProfile() {
 
   return (
     <div className="min-h-screen bg-background">
-
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
         <Link
           to="/clients"
@@ -219,7 +219,9 @@ function ClientProfile() {
               <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 {client.industry || "Engagement"}
               </span>
-              <h1 className="font-serif text-3xl leading-[1.05] sm:text-4xl md:text-5xl truncate">{client.company}</h1>
+              <h1 className="font-serif text-3xl leading-[1.05] sm:text-4xl md:text-5xl truncate">
+                {client.company}
+              </h1>
               <p className="text-sm text-muted-foreground truncate">
                 {client.fullName} · {client.email}
                 {client.website ? ` · ${client.website}` : ""}
@@ -266,9 +268,7 @@ function ClientProfile() {
                         style={{ background: STATUS_COLORS[s] }}
                       />
                       <span className="flex-1 text-left">{s}</span>
-                      {client.status === s && (
-                        <Check className="size-3.5 text-[#7C5CFF]" />
-                      )}
+                      {client.status === s && <Check className="size-3.5 text-[#7C5CFF]" />}
                     </button>
                   ))}
                 </div>
@@ -414,7 +414,9 @@ function ClientProfile() {
 
             {tab === "Files" && <FilesSection client={client} />}
 
-            {tab === "Invoices" && <ClientInvoicesSection clientId={client.id} clientCompany={client.company} />}
+            {tab === "Invoices" && (
+              <ClientInvoicesSection clientId={client.id} clientCompany={client.company} />
+            )}
 
             {tab === "Activity" && (
               <div className="space-y-4">
@@ -842,39 +844,39 @@ function FilesSection({ client }: { client: ClientRecord }) {
           {client.files.map((f: ClientFile) => {
             const href = getClientFileHref(f);
             return (
-            <li
-              key={f.id}
-              className="flex items-center justify-between rounded-xl bg-surface p-4 ring-1 ring-hairline"
-            >
-              <div className="min-w-0 pr-3">
-                <div className="truncate text-sm font-medium text-foreground" title={f.name}>
-                  {f.name}
+              <li
+                key={f.id}
+                className="flex items-center justify-between rounded-xl bg-surface p-4 ring-1 ring-hairline"
+              >
+                <div className="min-w-0 pr-3">
+                  <div className="truncate text-sm font-medium text-foreground" title={f.name}>
+                    {f.name}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {(f.size / 1024).toFixed(1)} KB &bull; {f.type || "file"}
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {(f.size / 1024).toFixed(1)} KB &bull; {f.type || "file"}
-                </div>
-              </div>
-              <div className="flex items-center gap-3 shrink-0">
-                {href && (
-                  <a
-                    href={href}
-                    download={f.name}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-medium bg-[#7C5CFF]/10 text-[#7C5CFF] hover:bg-[#7C5CFF]/20 transition-all cursor-pointer"
+                <div className="flex items-center gap-3 shrink-0">
+                  {href && (
+                    <a
+                      href={href}
+                      download={f.name}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-medium bg-[#7C5CFF]/10 text-[#7C5CFF] hover:bg-[#7C5CFF]/20 transition-all cursor-pointer"
+                    >
+                      <Download className="size-3.5" />
+                      Download
+                    </a>
+                  )}
+                  <button
+                    onClick={() => handleDeleteFile(f.id)}
+                    className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
                   >
-                    <Download className="size-3.5" />
-                    Download
-                  </a>
-                )}
-                <button
-                  onClick={() => handleDeleteFile(f.id)}
-                  className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
-                >
-                  <Trash2 className="size-4" />
-                </button>
-              </div>
-            </li>
+                    <Trash2 className="size-4" />
+                  </button>
+                </div>
+              </li>
             );
           })}
         </ul>
@@ -1020,7 +1022,13 @@ function PortalCard({ clientId, initialToken }: { clientId: string; initialToken
 
 const EMPTY_LINE_ITEM = (): InvoiceLineItem => ({ description: "", qty: 1, unitPrice: 0 });
 
-function ClientInvoicesSection({ clientId, clientCompany }: { clientId: string; clientCompany: string }) {
+function ClientInvoicesSection({
+  clientId,
+  clientCompany,
+}: {
+  clientId: string;
+  clientCompany: string;
+}) {
   const queryClient = useQueryClient();
   const getInvoices = useServerFn(listClientInvoices);
   const createInv = useServerFn(createInvoice);
@@ -1042,12 +1050,14 @@ function ClientInvoicesSection({ clientId, clientCompany }: { clientId: string; 
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([EMPTY_LINE_ITEM()]);
-  const [deliveryMethod, setDeliveryMethod] = useState<"immediate" | "scheduled" | "none">("immediate");
+  const [deliveryMethod, setDeliveryMethod] = useState<"immediate" | "scheduled" | "none">(
+    "immediate",
+  );
   const [sendAt, setSendAt] = useState("");
 
   const lineTotal = useMemo(
     () => lineItems.reduce((s, li) => s + (Number(li.qty) || 0) * (Number(li.unitPrice) || 0), 0),
-    [lineItems]
+    [lineItems],
   );
 
   const addLineItem = () => setLineItems((p) => [...p, EMPTY_LINE_ITEM()]);
@@ -1065,8 +1075,10 @@ function ClientInvoicesSection({ clientId, clientCompany }: { clientId: string; 
         deliveryMethod === "scheduled"
           ? "Invoice scheduled"
           : deliveryMethod === "immediate"
-          ? (status === "Paid" ? "Invoice created & receipt emailed" : "Invoice created & sent")
-          : "Invoice created successfully"
+            ? status === "Paid"
+              ? "Invoice created & receipt emailed"
+              : "Invoice created & sent"
+            : "Invoice created successfully",
       );
       closeModal();
     },
@@ -1183,11 +1195,12 @@ function ClientInvoicesSection({ clientId, clientCompany }: { clientId: string; 
     }
   };
 
-
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
   const stats = useMemo(() => {
-    let paid = 0, unpaid = 0, overdue = 0;
+    let paid = 0,
+      unpaid = 0,
+      overdue = 0;
     invoices.forEach((i) => {
       if (i.status === "Paid") paid += i.amount;
       else if (i.status === "Unpaid") unpaid += i.amount;
@@ -1221,8 +1234,12 @@ function ClientInvoicesSection({ clientId, clientCompany }: { clientId: string; 
           { label: "Overdue", value: `$${stats.overdue.toFixed(2)}`, color: "text-red-400" },
         ].map((s) => (
           <div key={s.label} className="px-4 py-3 sm:px-5 sm:py-4">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{s.label}</div>
-            <div className={`mt-1 font-serif text-xl sm:text-2xl leading-none ${s.color || ""}`}>{s.value}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              {s.label}
+            </div>
+            <div className={`mt-1 font-serif text-xl sm:text-2xl leading-none ${s.color || ""}`}>
+              {s.value}
+            </div>
           </div>
         ))}
       </div>
@@ -1257,22 +1274,73 @@ function ClientInvoicesSection({ clientId, clientCompany }: { clientId: string; 
                   <tr key={inv.id} className="hover:bg-surface-muted/10 transition-colors">
                     <td className="px-5 py-3">
                       <div className="font-medium">{inv.title}</div>
-                      {inv.lineItems.length > 0 && <div className="text-[10px] text-muted-foreground">{inv.lineItems.length} item{inv.lineItems.length !== 1 ? "s" : ""}</div>}
+                      {inv.lineItems.length > 0 && (
+                        <div className="text-[10px] text-muted-foreground">
+                          {inv.lineItems.length} item{inv.lineItems.length !== 1 ? "s" : ""}
+                        </div>
+                      )}
                     </td>
                     <td className="px-5 py-3 font-semibold">${inv.amount.toFixed(2)}</td>
                     <td className="px-5 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ${inv.status === "Paid" ? "bg-emerald-500/15 text-emerald-300 ring-emerald-400/20" : inv.status === "Unpaid" ? "bg-amber-500/15 text-amber-300 ring-amber-400/20" : "bg-red-500/15 text-red-300 ring-red-400/20"}`}>{inv.status}</span>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ${inv.status === "Paid" ? "bg-emerald-500/15 text-emerald-300 ring-emerald-400/20" : inv.status === "Unpaid" ? "bg-amber-500/15 text-amber-300 ring-amber-400/20" : "bg-red-500/15 text-red-300 ring-red-400/20"}`}
+                      >
+                        {inv.status}
+                      </span>
                     </td>
-                    <td className="px-5 py-3 text-muted-foreground text-xs">{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : "—"}</td>
+                    <td className="px-5 py-3 text-muted-foreground text-xs">
+                      {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : "—"}
+                    </td>
                     <td className="px-5 py-3 text-xs">
-                      {inv.sentAt ? <span className="text-emerald-400 flex items-center gap-1"><CheckCircle className="size-3" />{new Date(inv.sentAt).toLocaleDateString()}</span> : inv.sendAt ? <span className="text-amber-400 flex items-center gap-1"><Calendar className="size-3" />{new Date(inv.sendAt).toLocaleDateString()}</span> : <span className="text-muted-foreground/40">—</span>}
+                      {inv.sentAt ? (
+                        <span className="text-emerald-400 flex items-center gap-1">
+                          <CheckCircle className="size-3" />
+                          {new Date(inv.sentAt).toLocaleDateString()}
+                        </span>
+                      ) : inv.sendAt ? (
+                        <span className="text-amber-400 flex items-center gap-1">
+                          <Calendar className="size-3" />
+                          {new Date(inv.sendAt).toLocaleDateString()}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground/40">—</span>
+                      )}
                     </td>
                     <td className="px-5 py-3 text-right">
                       <div className="inline-flex items-center gap-1">
-                        {!inv.sentAt && <button onClick={() => { if (confirm(`Send invoice to client?`)) sendMutation.mutate(inv.id); }} disabled={sendMutation.isPending} className="p-1.5 rounded-lg text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10 transition-colors cursor-pointer"><Send className="size-4" /></button>}
-                        {inv.status !== "Paid" && <button onClick={() => markPaidMutation.mutate(inv.id)} className="p-1.5 rounded-lg text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer"><CheckCircle className="size-4" /></button>}
-                        <button onClick={() => openEditModal(inv)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors cursor-pointer"><Pencil className="size-4" /></button>
-                        <button onClick={() => { if (confirm("Delete this invoice?")) deleteMutation.mutate(inv.id); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"><Trash2 className="size-4" /></button>
+                        {!inv.sentAt && (
+                          <button
+                            onClick={() => {
+                              if (confirm(`Send invoice to client?`)) sendMutation.mutate(inv.id);
+                            }}
+                            disabled={sendMutation.isPending}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10 transition-colors cursor-pointer"
+                          >
+                            <Send className="size-4" />
+                          </button>
+                        )}
+                        {inv.status !== "Paid" && (
+                          <button
+                            onClick={() => markPaidMutation.mutate(inv.id)}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer"
+                          >
+                            <CheckCircle className="size-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openEditModal(inv)}
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors cursor-pointer"
+                        >
+                          <Pencil className="size-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm("Delete this invoice?")) deleteMutation.mutate(inv.id);
+                          }}
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -1285,285 +1353,295 @@ function ClientInvoicesSection({ clientId, clientCompany }: { clientId: string; 
 
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeModal} className="fixed inset-0 bg-background/80 backdrop-blur-sm" />
+          <div className="fixed inset-0 z-50 md:flex md:items-center md:justify-center md:p-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-4xl rounded-3xl bg-surface ring-1 ring-hairline shadow-[0_24px_50px_rgba(0,0,0,0.25)] overflow-hidden max-h-[90vh] overflow-y-auto"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeModal}
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 24 }}
+              transition={{ type: "spring", damping: 28, stiffness: 320 }}
+              className="relative flex h-full w-full flex-col bg-surface md:h-auto md:max-h-[min(92vh,820px)] md:max-w-4xl md:rounded-2xl md:ring-1 md:ring-white/10 md:shadow-[0_24px_60px_rgba(0,0,0,0.45)] overflow-hidden"
             >
-              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-hairline px-6 py-4 bg-surface">
-                <h3 className="font-serif text-2xl">
-                  {editingInvoice ? "Edit Invoice" : "New Invoice"}
-                </h3>
-                <button onClick={closeModal} className="p-1 rounded-lg text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 px-4 py-3.5 bg-surface/95 backdrop-blur-md md:px-6 md:py-4">
+                <div>
+                  <h3 className="font-serif text-xl md:text-2xl text-foreground">
+                    {editingInvoice ? "Edit invoice" : "New invoice"}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">For {clientCompany}</p>
+                </div>
+                <button
+                  onClick={closeModal}
+                  className="flex size-9 items-center justify-center rounded-xl ring-1 ring-white/10 text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors cursor-pointer"
+                  aria-label="Close"
+                >
                   <X className="size-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-                  
-                  {/* Left Column: Form Details & Items (3/5) */}
-                  <div className="md:col-span-3 space-y-5">
-                    
-                    {/* Title */}
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Invoice Title</label>
-                      <input
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        placeholder="e.g. Design Retainer — June 2026"
-                        className="h-10 w-full rounded-lg border border-hairline bg-background px-3 text-sm text-foreground focus:border-[#7C5CFF] focus:outline-none"
-                        required
+              <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+                <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-5 md:px-6 md:py-6 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                    <div className="md:col-span-3 space-y-5">
+                      <div className="space-y-1.5">
+                        <label className="block text-sm font-medium text-foreground/80">
+                          Invoice title
+                        </label>
+                        <input
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                          placeholder="e.g. Design Retainer — June 2026"
+                          className={invoiceInputClass}
+                          required
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 md:hidden">
+                        <div className="space-y-1.5">
+                          <label className="block text-sm font-medium text-foreground/80">
+                            Status
+                          </label>
+                          <select
+                            value={status}
+                            onChange={(e) => {
+                              const val = e.target.value as "Unpaid" | "Paid" | "Overdue";
+                              setStatus(val);
+                              if (val === "Paid" && deliveryMethod === "scheduled")
+                                setDeliveryMethod("immediate");
+                            }}
+                            className={`${invoiceInputClass} cursor-pointer`}
+                          >
+                            <option value="Unpaid">Unpaid</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Overdue">Overdue</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="block text-sm font-medium text-foreground/80">
+                            Due date
+                          </label>
+                          <input
+                            type="date"
+                            value={dueDate}
+                            onChange={(e) => setDueDate(e.target.value)}
+                            className={invoiceInputClass}
+                          />
+                        </div>
+                      </div>
+
+                      <InvoiceLineItemsEditor
+                        lineItems={lineItems}
+                        currencySymbol="$"
+                        lineTotal={lineTotal}
+                        onAdd={addLineItem}
+                        onUpdate={updateLineItem}
+                        onRemove={removeLineItem}
                       />
+
+                      <div className="space-y-1.5">
+                        <label className="block text-sm font-medium text-foreground/80">
+                          Notes{" "}
+                          <span className="font-normal text-muted-foreground">(optional)</span>
+                        </label>
+                        <textarea
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          placeholder="Payment terms, bank details, special instructions..."
+                          rows={3}
+                          className={`${invoiceInputClass} min-h-[88px] py-2.5 resize-none`}
+                        />
+                      </div>
                     </div>
 
-                    {/* Line Items */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Line Items</label>
-                        <button
-                          type="button"
-                          onClick={addLineItem}
-                          className="text-xs font-medium text-[#7C5CFF] hover:text-[#6C4AFF] flex items-center gap-1 transition-colors cursor-pointer"
+                    <div className="md:col-span-2 md:border-l md:border-white/10 md:pl-6 space-y-5">
+                      <div className="hidden md:block space-y-1.5">
+                        <label className="block text-sm font-medium text-foreground/80">
+                          Status
+                        </label>
+                        <select
+                          value={status}
+                          onChange={(e) => {
+                            const val = e.target.value as any;
+                            setStatus(val);
+                            if (val === "Paid" && deliveryMethod === "scheduled") {
+                              setDeliveryMethod("immediate");
+                            }
+                          }}
+                          className="h-10 w-full rounded-lg border border-hairline bg-background px-3 text-sm text-foreground focus:border-[#7C5CFF] focus:outline-none cursor-pointer"
                         >
-                          <Plus className="size-3" /> Add item
-                        </button>
+                          <option value="Unpaid">Unpaid</option>
+                          <option value="Paid">Paid</option>
+                          <option value="Overdue">Overdue</option>
+                        </select>
                       </div>
 
-                      {/* Header row */}
-                      <div className="grid grid-cols-[1fr_75px_105px_90px_28px] gap-2 text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground px-1">
-                        <span>Description</span>
-                        <span className="text-center">Qty</span>
-                        <span className="text-right">Unit Price</span>
-                        <span className="text-right">Total</span>
-                        <span />
+                      <div className="hidden md:block space-y-1.5">
+                        <label className="block text-sm font-medium text-foreground/80">
+                          Due date
+                        </label>
+                        <input
+                          type="date"
+                          value={dueDate}
+                          onChange={(e) => setDueDate(e.target.value)}
+                          className={invoiceInputClass}
+                        />
                       </div>
 
-                      <div className="space-y-2">
-                        {lineItems.map((li, idx) => {
-                          const rowTotal = (Number(li.qty) || 0) * (Number(li.unitPrice) || 0);
-                          return (
-                            <div key={idx} className="grid grid-cols-[1fr_75px_105px_90px_28px] gap-2 items-center">
-                              <input
-                                value={li.description}
-                                onChange={(e) => updateLineItem(idx, "description", e.target.value)}
-                                placeholder="Service or product..."
-                                className="h-9 w-full rounded-lg border border-hairline bg-background px-2.5 text-sm text-foreground focus:border-[#7C5CFF] focus:outline-none"
-                                required
-                              />
-                              <input
-                                type="number"
-                                min="0.001"
-                                step="0.001"
-                                value={li.qty}
-                                onChange={(e) => updateLineItem(idx, "qty", parseFloat(e.target.value) || 0)}
-                                className="h-9 w-full rounded-lg border border-hairline bg-background px-2 text-sm text-center text-foreground focus:border-[#7C5CFF] focus:outline-none"
-                              />
-                              <input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={li.unitPrice}
-                                onChange={(e) => updateLineItem(idx, "unitPrice", parseFloat(e.target.value) || 0)}
-                                placeholder="0.00"
-                                className="h-9 w-full rounded-lg border border-hairline bg-background px-2 text-sm text-right text-foreground focus:border-[#7C5CFF] focus:outline-none"
-                              />
-                              <span className="text-sm font-medium text-foreground text-right pr-2">
-                                ${rowTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => removeLineItem(idx)}
-                                disabled={lineItems.length === 1}
-                                className="flex items-center justify-center size-7 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-30 cursor-pointer"
-                              >
-                                <X className="size-3.5" />
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Total */}
-                      <div className="flex justify-end pt-3 border-t border-hairline">
-                        <div className="text-right">
-                          <span className="text-xs text-muted-foreground uppercase tracking-wider mr-3">Total</span>
-                          <span className="font-serif text-xl font-semibold text-[#7C5CFF]">
-                            ${lineTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Notes */}
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Notes <span className="normal-case font-normal text-muted-foreground/60">(optional)</span></label>
-                      <textarea
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Payment terms, bank details, special instructions..."
-                        rows={2.5}
-                        className="w-full rounded-lg border border-hairline bg-background px-3 py-2 text-sm text-foreground focus:border-[#7C5CFF] focus:outline-none resize-none"
-                      />
-                    </div>
-
-                  </div>
-
-                  {/* Right Column: Status & Delivery Options (2/5) */}
-                  <div className="md:col-span-2 md:border-l md:border-hairline md:pl-6 space-y-5">
-                    
-                    {/* Status */}
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Status</label>
-                      <select
-                        value={status}
-                        onChange={(e) => {
-                          const val = e.target.value as any;
-                          setStatus(val);
-                          if (val === "Paid" && deliveryMethod === "scheduled") {
-                            setDeliveryMethod("immediate");
-                          }
-                        }}
-                        className="h-10 w-full rounded-lg border border-hairline bg-background px-3 text-sm text-foreground focus:border-[#7C5CFF] focus:outline-none cursor-pointer"
-                      >
-                        <option value="Unpaid">Unpaid</option>
-                        <option value="Paid">Paid</option>
-                        <option value="Overdue">Overdue</option>
-                      </select>
-                    </div>
-
-                    {/* Due Date */}
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Due Date</label>
-                      <input
-                        type="date"
-                        value={dueDate}
-                        onChange={(e) => setDueDate(e.target.value)}
-                        className="h-10 w-full rounded-lg border border-hairline bg-background px-3 text-sm text-foreground focus:border-[#7C5CFF] focus:outline-none"
-                      />
-                    </div>
-
-                    {/* Email Delivery Options */}
-                    {editingInvoice && editingInvoice.sentAt ? (
-                      <div className="rounded-xl border border-hairline bg-surface-muted p-4 space-y-2">
-                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground flex items-center gap-2">
-                          <Mail className="size-3.5" /> Email Delivery
-                        </div>
-                        <div className="text-xs text-foreground flex items-center gap-1.5 font-medium">
-                          <CheckCircle className="size-4 text-emerald-500" />
-                          <span>Sent to {editingInvoice.clientEmail || "client"} on {new Date(editingInvoice.sentAt).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="rounded-xl border border-hairline bg-background p-4 space-y-4">
-                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground flex items-center gap-2">
-                          <Mail className="size-3.5" /> Email Delivery
-                        </div>
-                        
-                        {status === "Paid" ? (
-                          <div className="space-y-3">
-                            <div className="flex flex-col gap-2">
-                              <button
-                                type="button"
-                                onClick={() => setDeliveryMethod("immediate")}
-                                className={`w-full h-10 px-3 rounded-lg text-left text-xs font-medium transition-all border flex items-center justify-between cursor-pointer ${deliveryMethod === "immediate" ? "bg-[#7C5CFF]/10 text-[#7C5CFF] border-[#7C5CFF]" : "border-hairline text-muted-foreground hover:text-foreground hover:bg-surface-muted"}`}
-                              >
-                                <span>Email receipt immediately</span>
-                                {deliveryMethod === "immediate" && <CheckCircle className="size-4 text-[#7C5CFF]" />}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setDeliveryMethod("none")}
-                                className={`w-full h-10 px-3 rounded-lg text-left text-xs font-medium transition-all border flex items-center justify-between cursor-pointer ${deliveryMethod === "none" ? "bg-[#7C5CFF]/10 text-[#7C5CFF] border-[#7C5CFF]" : "border-hairline text-muted-foreground hover:text-foreground hover:bg-surface-muted"}`}
-                              >
-                                <span>Do not email receipt</span>
-                                {deliveryMethod === "none" && <CheckCircle className="size-4 text-[#7C5CFF]" />}
-                              </button>
-                            </div>
-                            <p className="text-[11px] text-muted-foreground/60 leading-relaxed">
-                              {deliveryMethod === "immediate"
-                                ? "A payment receipt email will be sent immediately upon saving."
-                                : "No receipt email will be sent. The invoice is recorded silently."}
-                            </p>
+                      {/* Email Delivery Options */}
+                      {editingInvoice && editingInvoice.sentAt ? (
+                        <div className="rounded-2xl bg-white/[0.03] p-4 space-y-2 ring-1 ring-white/10">
+                          <div className="text-sm font-medium text-foreground/80 flex items-center gap-2">
+                            <Mail className="size-4 text-[#7C5CFF]" /> Email delivery
                           </div>
-                        ) : (
-                          <div className="space-y-3">
-                            <div className="flex flex-col gap-2">
-                              <button
-                                type="button"
-                                onClick={() => setDeliveryMethod("immediate")}
-                                className={`w-full h-10 px-3 rounded-lg text-left text-xs font-medium transition-all border flex items-center justify-between cursor-pointer ${deliveryMethod === "immediate" ? "bg-[#7C5CFF]/10 text-[#7C5CFF] border-[#7C5CFF]" : "border-hairline text-muted-foreground hover:text-foreground hover:bg-surface-muted"}`}
-                              >
-                                <span>Email invoice immediately</span>
-                                {deliveryMethod === "immediate" && <CheckCircle className="size-4 text-[#7C5CFF]" />}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setDeliveryMethod("scheduled")}
-                                className={`w-full h-10 px-3 rounded-lg text-left text-xs font-medium transition-all border flex items-center justify-between cursor-pointer ${deliveryMethod === "scheduled" ? "bg-[#7C5CFF]/10 text-[#7C5CFF] border-[#7C5CFF]" : "border-hairline text-muted-foreground hover:text-foreground hover:bg-surface-muted"}`}
-                              >
-                                <span>Schedule email delivery</span>
-                                {deliveryMethod === "scheduled" && <CheckCircle className="size-4 text-[#7C5CFF]" />}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setDeliveryMethod("none")}
-                                className={`w-full h-10 px-3 rounded-lg text-left text-xs font-medium transition-all border flex items-center justify-between cursor-pointer ${deliveryMethod === "none" ? "bg-[#7C5CFF]/10 text-[#7C5CFF] border-[#7C5CFF]" : "border-hairline text-muted-foreground hover:text-foreground hover:bg-surface-muted"}`}
-                              >
-                                <span>Do not send email</span>
-                                {deliveryMethod === "none" && <CheckCircle className="size-4 text-[#7C5CFF]" />}
-                              </button>
-                            </div>
-                            
-                            {deliveryMethod === "scheduled" && (
-                              <div className="space-y-1.5 pt-1">
-                                <label className="block text-xs text-muted-foreground">Send on date</label>
-                                <input
-                                  type="date"
-                                  value={sendAt}
-                                  onChange={(e) => setSendAt(e.target.value)}
-                                  min={new Date().toISOString().split("T")[0]}
-                                  className="h-10 w-full rounded-lg border border-hairline bg-background px-3 text-sm text-foreground focus:border-[#7C5CFF] focus:outline-none animate-in fade-in slide-in-from-top-1 duration-200"
-                                  required
-                                />
+                          <div className="text-xs text-foreground flex items-center gap-1.5 font-medium">
+                            <CheckCircle className="size-4 text-emerald-500" />
+                            <span>
+                              Sent to {editingInvoice.clientEmail || "client"} on{" "}
+                              {new Date(editingInvoice.sentAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="rounded-2xl bg-white/[0.03] p-4 space-y-4 ring-1 ring-white/10">
+                          <div className="text-sm font-medium text-foreground/80 flex items-center gap-2">
+                            <Mail className="size-4 text-[#7C5CFF]" /> Email delivery
+                          </div>
+
+                          {status === "Paid" ? (
+                            <div className="space-y-3">
+                              <div className="flex flex-col gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setDeliveryMethod("immediate")}
+                                  className={`w-full h-10 px-3 rounded-lg text-left text-xs font-medium transition-all border flex items-center justify-between cursor-pointer ${deliveryMethod === "immediate" ? "bg-[#7C5CFF]/10 text-[#7C5CFF] border-[#7C5CFF]" : "border-hairline text-muted-foreground hover:text-foreground hover:bg-surface-muted"}`}
+                                >
+                                  <span>Email receipt immediately</span>
+                                  {deliveryMethod === "immediate" && (
+                                    <CheckCircle className="size-4 text-[#7C5CFF]" />
+                                  )}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setDeliveryMethod("none")}
+                                  className={`w-full h-10 px-3 rounded-lg text-left text-xs font-medium transition-all border flex items-center justify-between cursor-pointer ${deliveryMethod === "none" ? "bg-[#7C5CFF]/10 text-[#7C5CFF] border-[#7C5CFF]" : "border-hairline text-muted-foreground hover:text-foreground hover:bg-surface-muted"}`}
+                                >
+                                  <span>Do not email receipt</span>
+                                  {deliveryMethod === "none" && (
+                                    <CheckCircle className="size-4 text-[#7C5CFF]" />
+                                  )}
+                                </button>
                               </div>
-                            )}
-                            
-                            <p className="text-[11px] text-muted-foreground/60 leading-relaxed">
-                              {deliveryMethod === "immediate"
-                                ? "The invoice will be emailed to the client immediately after saving."
-                                : deliveryMethod === "scheduled"
-                                ? "The invoice will be automatically emailed to the client on the scheduled date."
-                                : "The invoice will be created/updated without sending any email."}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                              <p className="text-[11px] text-muted-foreground/60 leading-relaxed">
+                                {deliveryMethod === "immediate"
+                                  ? "A payment receipt email will be sent immediately upon saving."
+                                  : "No receipt email will be sent. The invoice is recorded silently."}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              <div className="flex flex-col gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setDeliveryMethod("immediate")}
+                                  className={`w-full h-10 px-3 rounded-lg text-left text-xs font-medium transition-all border flex items-center justify-between cursor-pointer ${deliveryMethod === "immediate" ? "bg-[#7C5CFF]/10 text-[#7C5CFF] border-[#7C5CFF]" : "border-hairline text-muted-foreground hover:text-foreground hover:bg-surface-muted"}`}
+                                >
+                                  <span>Email invoice immediately</span>
+                                  {deliveryMethod === "immediate" && (
+                                    <CheckCircle className="size-4 text-[#7C5CFF]" />
+                                  )}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setDeliveryMethod("scheduled")}
+                                  className={`w-full h-10 px-3 rounded-lg text-left text-xs font-medium transition-all border flex items-center justify-between cursor-pointer ${deliveryMethod === "scheduled" ? "bg-[#7C5CFF]/10 text-[#7C5CFF] border-[#7C5CFF]" : "border-hairline text-muted-foreground hover:text-foreground hover:bg-surface-muted"}`}
+                                >
+                                  <span>Schedule email delivery</span>
+                                  {deliveryMethod === "scheduled" && (
+                                    <CheckCircle className="size-4 text-[#7C5CFF]" />
+                                  )}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setDeliveryMethod("none")}
+                                  className={`w-full h-10 px-3 rounded-lg text-left text-xs font-medium transition-all border flex items-center justify-between cursor-pointer ${deliveryMethod === "none" ? "bg-[#7C5CFF]/10 text-[#7C5CFF] border-[#7C5CFF]" : "border-hairline text-muted-foreground hover:text-foreground hover:bg-surface-muted"}`}
+                                >
+                                  <span>Do not send email</span>
+                                  {deliveryMethod === "none" && (
+                                    <CheckCircle className="size-4 text-[#7C5CFF]" />
+                                  )}
+                                </button>
+                              </div>
 
+                              {deliveryMethod === "scheduled" && (
+                                <div className="space-y-1.5 pt-1">
+                                  <label className="block text-xs text-muted-foreground">
+                                    Send on date
+                                  </label>
+                                  <input
+                                    type="date"
+                                    value={sendAt}
+                                    onChange={(e) => setSendAt(e.target.value)}
+                                    min={new Date().toISOString().split("T")[0]}
+                                    className="h-10 w-full rounded-lg border border-hairline bg-background px-3 text-sm text-foreground focus:border-[#7C5CFF] focus:outline-none animate-in fade-in slide-in-from-top-1 duration-200"
+                                    required
+                                  />
+                                </div>
+                              )}
+
+                              <p className="text-[11px] text-muted-foreground/60 leading-relaxed">
+                                {deliveryMethod === "immediate"
+                                  ? "The invoice will be emailed to the client immediately after saving."
+                                  : deliveryMethod === "scheduled"
+                                    ? "The invoice will be automatically emailed to the client on the scheduled date."
+                                    : "The invoice will be created/updated without sending any email."}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="pt-4 border-t border-hairline flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    className="h-9 px-4 rounded-lg bg-surface hover:bg-white/5 border border-hairline text-sm font-medium transition-colors text-foreground cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSaving}
-                    className="h-9 px-5 rounded-lg bg-foreground text-background hover:opacity-90 text-sm font-medium transition-opacity disabled:opacity-50 flex items-center gap-2 cursor-pointer"
-                  >
-                    {isSaving && <Loader2 className="size-4 animate-spin" />}
-                    {editingInvoice ? "Save Changes" : deliveryMethod === "scheduled" ? "Schedule Invoice" : deliveryMethod === "none" ? "Create Invoice" : "Create & Send Invoice"}
-                  </button>
+                <div className="sticky bottom-0 z-10 border-t border-white/10 bg-surface/95 backdrop-blur-md px-4 py-3.5 md:px-6 flex items-center justify-between gap-3">
+                  <div className="md:hidden">
+                    <p className="text-[11px] text-muted-foreground">Total</p>
+                    <p className="font-serif text-lg font-semibold tabular-nums text-[#7C5CFF]">
+                      $
+                      {lineTotal.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 ml-auto">
+                    <button
+                      type="button"
+                      onClick={closeModal}
+                      className="h-10 px-4 rounded-xl ring-1 ring-white/10 hover:bg-white/5 text-sm font-medium transition-colors text-foreground cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSaving}
+                      className="h-10 px-5 rounded-xl bg-[#7C5CFF] text-white hover:bg-[#7C5CFF]/90 text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-lg shadow-[#7C5CFF]/20"
+                    >
+                      {isSaving && <Loader2 className="size-4 animate-spin" />}
+                      {editingInvoice
+                        ? "Save"
+                        : deliveryMethod === "scheduled"
+                          ? "Schedule"
+                          : deliveryMethod === "none"
+                            ? "Create"
+                            : "Create & send"}
+                    </button>
+                  </div>
                 </div>
               </form>
             </motion.div>

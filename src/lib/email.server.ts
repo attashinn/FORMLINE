@@ -54,11 +54,7 @@ async function writeOutboxFiles(basename: string, html: string, metadata: EmailO
 }
 
 /** Log outbound email HTML + metadata to public/emails for the outbox UI. */
-async function logEmailToOutbox(opts: {
-  to: string;
-  subject: string;
-  html: string;
-}): Promise<{
+async function logEmailToOutbox(opts: { to: string; subject: string; html: string }): Promise<{
   filename: string;
   previewUrl: string;
   updateMetadata: (patch: Partial<EmailOutboxMetadata>) => Promise<void>;
@@ -306,11 +302,108 @@ export async function sendPortalLinkEmail(opts: {
   return finalized.data;
 }
 
-export async function sendAutomationEmail(opts: {
-  to: string;
-  subject: string;
-  body: string;
-}) {
+export async function sendPasswordResetEmail(opts: { to: string; resetToken: string }) {
+  const { apiKey, fromEmail, appUrl } = getEmailConfig();
+  const resetUrl = `${appUrl}/auth?reset=${encodeURIComponent(opts.resetToken)}`;
+  const subject = "Reset your Formline password";
+  const text = `Hi,\n\nWe received a request to reset your Formline password.\n\nReset your password here:\n${resetUrl}\n\nThis link expires in 1 hour. If you did not request this, you can ignore this email.\n\nThanks,\nFormline`;
+
+  const safeUrl = escapeHtml(resetUrl);
+  const htmlContent = `
+    <div style="font-family: Manrope, system-ui, sans-serif; max-width: 560px; margin: 0 auto; color: #111;">
+      <p style="font-size: 15px; line-height: 1.6;">Hi,</p>
+      <p style="font-size: 15px; line-height: 1.6;">We received a request to reset your Formline password.</p>
+      <p style="margin: 28px 0;">
+        <a href="${safeUrl}" style="display: inline-block; background: #7C5CFF; color: #fff; text-decoration: none; padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600;">Reset password</a>
+      </p>
+      <p style="font-size: 13px; color: #666; word-break: break-all;">${safeUrl}</p>
+      <p style="font-size: 13px; color: #888; margin-top: 32px;">This link expires in 1 hour. Sent by Formline.</p>
+    </div>
+  `;
+
+  const { previewUrl, updateMetadata } = await logEmailToOutbox({
+    to: opts.to,
+    subject,
+    html: htmlContent,
+  });
+
+  if (!apiKey || !fromEmail) {
+    console.warn(
+      `[auth] Password reset email simulated locally (Resend not configured). Preview: ${appUrl}${previewUrl}`,
+    );
+    return { simulated: true, previewUrl };
+  }
+
+  const resend = new Resend(apiKey);
+  const result = await resend.emails.send({
+    from: fromEmail,
+    to: opts.to,
+    subject,
+    text,
+    html: htmlContent,
+  });
+
+  const finalized = await finalizeResendDelivery(updateMetadata, result);
+  if (!finalized.ok) {
+    console.error("[auth] Failed to send password reset email");
+    throw new Error("Failed to send password reset email");
+  }
+
+  return finalized.data;
+}
+
+export async function sendAccountLockoutEmail(opts: { to: string; resetToken: string }) {
+  const { apiKey, fromEmail, appUrl } = getEmailConfig();
+  const resetUrl = `${appUrl}/auth?reset=${encodeURIComponent(opts.resetToken)}`;
+  const subject = "Formline account security notice";
+  const text = `Hi,\n\nYour Formline account was temporarily locked after several unsuccessful sign-in attempts.\n\nIf this was you, you can reset your password here:\n${resetUrl}\n\nThis link expires in 1 hour. If you did not attempt to sign in, you can ignore this email.\n\nThanks,\nFormline Security`;
+
+  const safeUrl = escapeHtml(resetUrl);
+  const htmlContent = `
+    <div style="font-family: Manrope, system-ui, sans-serif; max-width: 560px; margin: 0 auto; color: #111;">
+      <p style="font-size: 15px; line-height: 1.6;">Hi,</p>
+      <p style="font-size: 15px; line-height: 1.6;">Your Formline account was temporarily locked after several unsuccessful sign-in attempts.</p>
+      <p style="font-size: 15px; line-height: 1.6;">If this was you, use the secure link below to reset your password:</p>
+      <p style="margin: 28px 0;">
+        <a href="${safeUrl}" style="display: inline-block; background: #7C5CFF; color: #fff; text-decoration: none; padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600;">Reset password</a>
+      </p>
+      <p style="font-size: 13px; color: #666; word-break: break-all;">${safeUrl}</p>
+      <p style="font-size: 13px; color: #888; margin-top: 32px;">This link expires in 1 hour. Sent by Formline Security.</p>
+    </div>
+  `;
+
+  const { previewUrl, updateMetadata } = await logEmailToOutbox({
+    to: opts.to,
+    subject,
+    html: htmlContent,
+  });
+
+  if (!apiKey || !fromEmail) {
+    console.warn(
+      `[auth] Lockout email simulated locally (Resend not configured). Preview: ${appUrl}${previewUrl}`,
+    );
+    return { simulated: true, previewUrl };
+  }
+
+  const resend = new Resend(apiKey);
+  const result = await resend.emails.send({
+    from: fromEmail,
+    to: opts.to,
+    subject,
+    text,
+    html: htmlContent,
+  });
+
+  const finalized = await finalizeResendDelivery(updateMetadata, result);
+  if (!finalized.ok) {
+    console.error("[auth] Failed to send lockout email:", finalized.error?.message);
+    throw new Error(finalized.error?.message || "Failed to send lockout email");
+  }
+
+  return finalized.data;
+}
+
+export async function sendAutomationEmail(opts: { to: string; subject: string; body: string }) {
   const { apiKey, fromEmail } = getEmailConfig();
   const text = opts.body;
   const htmlContent = `
@@ -478,9 +571,10 @@ export async function sendInvoiceEmail(opts: {
   const { apiKey, fromEmail, appUrl: configAppUrl } = getEmailConfig();
   const appUrl = opts.appUrl || configAppUrl;
 
-  const lineItems = opts.lineItems && opts.lineItems.length > 0 ? opts.lineItems : [
-    { description: opts.invoiceTitle, qty: 1, unitPrice: opts.amount },
-  ];
+  const lineItems =
+    opts.lineItems && opts.lineItems.length > 0
+      ? opts.lineItems
+      : [{ description: opts.invoiceTitle, qty: 1, unitPrice: opts.amount }];
 
   const totalAmount = lineItems.reduce((s, li) => s + li.qty * li.unitPrice, 0);
 
@@ -497,12 +591,17 @@ export async function sendInvoiceEmail(opts: {
     .join("\n");
 
   const dueDateStr = opts.dueDate
-    ? new Date(opts.dueDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    ? new Date(opts.dueDate).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
     : null;
 
-  const subject = opts.status === "Paid"
-    ? `Receipt: ${opts.invoiceTitle} — $${totalAmount.toFixed(2)}`
-    : `Invoice: ${opts.invoiceTitle} — $${totalAmount.toFixed(2)}`;
+  const subject =
+    opts.status === "Paid"
+      ? `Receipt: ${opts.invoiceTitle} — $${totalAmount.toFixed(2)}`
+      : `Invoice: ${opts.invoiceTitle} — $${totalAmount.toFixed(2)}`;
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -540,9 +639,12 @@ export async function sendInvoiceEmail(opts: {
                     ${opts.status === "Paid" ? "Amount Paid" : "Amount Due"}
                   </p>
                   <p style="margin:4px 0 0;font-size:28px;font-weight:700;color:#fff;">$${totalAmount.toFixed(2)}</p>
-                  ${opts.status === "Paid"
-                    ? `<p style="margin:6px 0 0;display:inline-block;font-size:10px;font-weight:700;color:#10b981;background:#ffffff;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:0.05em;">PAID RECEIPT</p>`
-                    : dueDateStr ? `<p style="margin:2px 0 0;font-size:12px;color:rgba(255,255,255,0.7);">Due ${dueDateStr}</p>` : ""
+                  ${
+                    opts.status === "Paid"
+                      ? `<p style="margin:6px 0 0;display:inline-block;font-size:10px;font-weight:700;color:#10b981;background:#ffffff;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:0.05em;">PAID RECEIPT</p>`
+                      : dueDateStr
+                        ? `<p style="margin:2px 0 0;font-size:12px;color:rgba(255,255,255,0.7);">Due ${dueDateStr}</p>`
+                        : ""
                   }
                 </td>
               </tr>
@@ -573,11 +675,15 @@ export async function sendInvoiceEmail(opts: {
               </tbody>
             </table>
 
-            ${opts.notes ? `
+            ${
+              opts.notes
+                ? `
             <div style="margin-top:24px;padding:16px;background:#f9f9fb;border-radius:10px;border-left:4px solid #7C5CFF;">
               <p style="margin:0 0 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#7C5CFF;">Notes</p>
               <p style="margin:0;font-size:14px;color:#444;line-height:1.6;">${escapeHtml(opts.notes)}</p>
-            </div>` : ""}
+            </div>`
+                : ""
+            }
 
             <div style="margin-top:32px;text-align:center;">
               <a href="${appUrl}/invoices" style="display:inline-block;background:#7C5CFF;color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:600;">View Invoice Online</a>

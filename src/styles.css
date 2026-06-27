@@ -281,6 +281,55 @@
   animation: marquee-scroll 15s linear infinite;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee-scroll,
+  .landing-fade-in,
+  .hero-live-dot::after {
+    animation: none !important;
+  }
+}
+
+@keyframes landing-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.landing-fade-in {
+  animation: landing-fade-in 0.5s ease-out both;
+}
+
+@keyframes hero-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.hero-live-dot::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  background: #7c5cff;
+  animation: hero-pulse 2.4s ease-in-out infinite;
+}
+
+.landing-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 600px;
+}
+
 /* Sonner renders close button first in DOM — reorder to icon | content | close */
 [data-sonner-toast]:not([data-styled="true"]) {
   display: flex !important;

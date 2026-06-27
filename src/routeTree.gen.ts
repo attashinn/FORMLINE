@@ -9,6 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WorkspaceRouteImport } from './routes/workspace'
+import { Route as UseCasesRouteImport } from './routes/use-cases'
+import { Route as TemplatesRouteImport } from './routes/templates'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
+import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -26,9 +32,44 @@ import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedFormsIndexRouteImport } from './routes/_authenticated/forms.index'
 import { Route as AuthenticatedClientsIndexRouteImport } from './routes/_authenticated/clients.index'
 import { Route as ApiCronWeeklySummaryRouteImport } from './routes/api.cron.weekly-summary'
+import { Route as ApiAuthSignUpRouteImport } from './routes/api.auth.sign-up'
+import { Route as ApiAuthSignInRouteImport } from './routes/api.auth.sign-in'
+import { Route as ApiAuthResetPasswordRouteImport } from './routes/api.auth.reset-password'
+import { Route as ApiAuthRequestPasswordResetRouteImport } from './routes/api.auth.request-password-reset'
+import { Route as ApiAuthLoginRouteImport } from './routes/api.auth.login'
 import { Route as AuthenticatedFormsIdRouteImport } from './routes/_authenticated/forms.$id'
 import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients.$id'
 
+const WorkspaceRoute = WorkspaceRouteImport.update({
+  id: '/workspace',
+  path: '/workspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UseCasesRoute = UseCasesRouteImport.update({
+  id: '/use-cases',
+  path: '/use-cases',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TemplatesRoute = TemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeaturesRoute = FeaturesRouteImport.update({
+  id: '/features',
+  path: '/features',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -115,6 +156,32 @@ const ApiCronWeeklySummaryRoute = ApiCronWeeklySummaryRouteImport.update({
   path: '/api/cron/weekly-summary',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthSignUpRoute = ApiAuthSignUpRouteImport.update({
+  id: '/api/auth/sign-up',
+  path: '/api/auth/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthSignInRoute = ApiAuthSignInRouteImport.update({
+  id: '/api/auth/sign-in',
+  path: '/api/auth/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthResetPasswordRoute = ApiAuthResetPasswordRouteImport.update({
+  id: '/api/auth/reset-password',
+  path: '/api/auth/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthRequestPasswordResetRoute =
+  ApiAuthRequestPasswordResetRouteImport.update({
+    id: '/api/auth/request-password-reset',
+    path: '/api/auth/request-password-reset',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAuthLoginRoute = ApiAuthLoginRouteImport.update({
+  id: '/api/auth/login',
+  path: '/api/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedFormsIdRoute = AuthenticatedFormsIdRouteImport.update({
   id: '/forms/$id',
   path: '/forms/$id',
@@ -129,6 +196,12 @@ const AuthenticatedClientsIdRoute = AuthenticatedClientsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/features': typeof FeaturesRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/pricing': typeof PricingRoute
+  '/templates': typeof TemplatesRoute
+  '/use-cases': typeof UseCasesRoute
+  '/workspace': typeof WorkspaceRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/automations': typeof AuthenticatedAutomationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -142,6 +215,11 @@ export interface FileRoutesByFullPath {
   '/portal/$token': typeof PortalTokenRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/forms/$id': typeof AuthenticatedFormsIdRoute
+  '/api/auth/login': typeof ApiAuthLoginRoute
+  '/api/auth/request-password-reset': typeof ApiAuthRequestPasswordResetRoute
+  '/api/auth/reset-password': typeof ApiAuthResetPasswordRoute
+  '/api/auth/sign-in': typeof ApiAuthSignInRoute
+  '/api/auth/sign-up': typeof ApiAuthSignUpRoute
   '/api/cron/weekly-summary': typeof ApiCronWeeklySummaryRoute
   '/clients/': typeof AuthenticatedClientsIndexRoute
   '/forms/': typeof AuthenticatedFormsIndexRoute
@@ -149,6 +227,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/features': typeof FeaturesRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/pricing': typeof PricingRoute
+  '/templates': typeof TemplatesRoute
+  '/use-cases': typeof UseCasesRoute
+  '/workspace': typeof WorkspaceRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/automations': typeof AuthenticatedAutomationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -162,6 +246,11 @@ export interface FileRoutesByTo {
   '/portal/$token': typeof PortalTokenRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/forms/$id': typeof AuthenticatedFormsIdRoute
+  '/api/auth/login': typeof ApiAuthLoginRoute
+  '/api/auth/request-password-reset': typeof ApiAuthRequestPasswordResetRoute
+  '/api/auth/reset-password': typeof ApiAuthResetPasswordRoute
+  '/api/auth/sign-in': typeof ApiAuthSignInRoute
+  '/api/auth/sign-up': typeof ApiAuthSignUpRoute
   '/api/cron/weekly-summary': typeof ApiCronWeeklySummaryRoute
   '/clients': typeof AuthenticatedClientsIndexRoute
   '/forms': typeof AuthenticatedFormsIndexRoute
@@ -171,6 +260,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/features': typeof FeaturesRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/pricing': typeof PricingRoute
+  '/templates': typeof TemplatesRoute
+  '/use-cases': typeof UseCasesRoute
+  '/workspace': typeof WorkspaceRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/automations': typeof AuthenticatedAutomationsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -184,6 +279,11 @@ export interface FileRoutesById {
   '/portal/$token': typeof PortalTokenRoute
   '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
   '/_authenticated/forms/$id': typeof AuthenticatedFormsIdRoute
+  '/api/auth/login': typeof ApiAuthLoginRoute
+  '/api/auth/request-password-reset': typeof ApiAuthRequestPasswordResetRoute
+  '/api/auth/reset-password': typeof ApiAuthResetPasswordRoute
+  '/api/auth/sign-in': typeof ApiAuthSignInRoute
+  '/api/auth/sign-up': typeof ApiAuthSignUpRoute
   '/api/cron/weekly-summary': typeof ApiCronWeeklySummaryRoute
   '/_authenticated/clients/': typeof AuthenticatedClientsIndexRoute
   '/_authenticated/forms/': typeof AuthenticatedFormsIndexRoute
@@ -193,6 +293,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/features'
+    | '/how-it-works'
+    | '/pricing'
+    | '/templates'
+    | '/use-cases'
+    | '/workspace'
     | '/analytics'
     | '/automations'
     | '/dashboard'
@@ -206,6 +312,11 @@ export interface FileRouteTypes {
     | '/portal/$token'
     | '/clients/$id'
     | '/forms/$id'
+    | '/api/auth/login'
+    | '/api/auth/request-password-reset'
+    | '/api/auth/reset-password'
+    | '/api/auth/sign-in'
+    | '/api/auth/sign-up'
     | '/api/cron/weekly-summary'
     | '/clients/'
     | '/forms/'
@@ -213,6 +324,12 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/features'
+    | '/how-it-works'
+    | '/pricing'
+    | '/templates'
+    | '/use-cases'
+    | '/workspace'
     | '/analytics'
     | '/automations'
     | '/dashboard'
@@ -226,6 +343,11 @@ export interface FileRouteTypes {
     | '/portal/$token'
     | '/clients/$id'
     | '/forms/$id'
+    | '/api/auth/login'
+    | '/api/auth/request-password-reset'
+    | '/api/auth/reset-password'
+    | '/api/auth/sign-in'
+    | '/api/auth/sign-up'
     | '/api/cron/weekly-summary'
     | '/clients'
     | '/forms'
@@ -234,6 +356,12 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/features'
+    | '/how-it-works'
+    | '/pricing'
+    | '/templates'
+    | '/use-cases'
+    | '/workspace'
     | '/_authenticated/analytics'
     | '/_authenticated/automations'
     | '/_authenticated/dashboard'
@@ -247,6 +375,11 @@ export interface FileRouteTypes {
     | '/portal/$token'
     | '/_authenticated/clients/$id'
     | '/_authenticated/forms/$id'
+    | '/api/auth/login'
+    | '/api/auth/request-password-reset'
+    | '/api/auth/reset-password'
+    | '/api/auth/sign-in'
+    | '/api/auth/sign-up'
     | '/api/cron/weekly-summary'
     | '/_authenticated/clients/'
     | '/_authenticated/forms/'
@@ -256,13 +389,66 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  FeaturesRoute: typeof FeaturesRoute
+  HowItWorksRoute: typeof HowItWorksRoute
+  PricingRoute: typeof PricingRoute
+  TemplatesRoute: typeof TemplatesRoute
+  UseCasesRoute: typeof UseCasesRoute
+  WorkspaceRoute: typeof WorkspaceRoute
   FTokenRoute: typeof FTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
+  ApiAuthLoginRoute: typeof ApiAuthLoginRoute
+  ApiAuthRequestPasswordResetRoute: typeof ApiAuthRequestPasswordResetRoute
+  ApiAuthResetPasswordRoute: typeof ApiAuthResetPasswordRoute
+  ApiAuthSignInRoute: typeof ApiAuthSignInRoute
+  ApiAuthSignUpRoute: typeof ApiAuthSignUpRoute
   ApiCronWeeklySummaryRoute: typeof ApiCronWeeklySummaryRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/workspace': {
+      id: '/workspace'
+      path: '/workspace'
+      fullPath: '/workspace'
+      preLoaderRoute: typeof WorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/use-cases': {
+      id: '/use-cases'
+      path: '/use-cases'
+      fullPath: '/use-cases'
+      preLoaderRoute: typeof UseCasesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/templates': {
+      id: '/templates'
+      path: '/templates'
+      fullPath: '/templates'
+      preLoaderRoute: typeof TemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/features': {
+      id: '/features'
+      path: '/features'
+      fullPath: '/features'
+      preLoaderRoute: typeof FeaturesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -382,6 +568,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCronWeeklySummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/sign-up': {
+      id: '/api/auth/sign-up'
+      path: '/api/auth/sign-up'
+      fullPath: '/api/auth/sign-up'
+      preLoaderRoute: typeof ApiAuthSignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/sign-in': {
+      id: '/api/auth/sign-in'
+      path: '/api/auth/sign-in'
+      fullPath: '/api/auth/sign-in'
+      preLoaderRoute: typeof ApiAuthSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/reset-password': {
+      id: '/api/auth/reset-password'
+      path: '/api/auth/reset-password'
+      fullPath: '/api/auth/reset-password'
+      preLoaderRoute: typeof ApiAuthResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/request-password-reset': {
+      id: '/api/auth/request-password-reset'
+      path: '/api/auth/request-password-reset'
+      fullPath: '/api/auth/request-password-reset'
+      preLoaderRoute: typeof ApiAuthRequestPasswordResetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/login': {
+      id: '/api/auth/login'
+      path: '/api/auth/login'
+      fullPath: '/api/auth/login'
+      preLoaderRoute: typeof ApiAuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/forms/$id': {
       id: '/_authenticated/forms/$id'
       path: '/forms/$id'
@@ -438,8 +659,19 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  FeaturesRoute: FeaturesRoute,
+  HowItWorksRoute: HowItWorksRoute,
+  PricingRoute: PricingRoute,
+  TemplatesRoute: TemplatesRoute,
+  UseCasesRoute: UseCasesRoute,
+  WorkspaceRoute: WorkspaceRoute,
   FTokenRoute: FTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
+  ApiAuthLoginRoute: ApiAuthLoginRoute,
+  ApiAuthRequestPasswordResetRoute: ApiAuthRequestPasswordResetRoute,
+  ApiAuthResetPasswordRoute: ApiAuthResetPasswordRoute,
+  ApiAuthSignInRoute: ApiAuthSignInRoute,
+  ApiAuthSignUpRoute: ApiAuthSignUpRoute,
   ApiCronWeeklySummaryRoute: ApiCronWeeklySummaryRoute,
 }
 export const routeTree = rootRouteImport

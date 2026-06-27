@@ -131,6 +131,21 @@ CREATE TABLE IF NOT EXISTS owners (
 CREATE INDEX IF NOT EXISTS owners_clerk_user_id_idx ON owners (clerk_user_id);
 CREATE INDEX IF NOT EXISTS owners_email_idx ON owners (email);
 
+-- Bcrypt password hashes (app-owned; Clerk handles sessions only)
+CREATE TABLE IF NOT EXISTS owner_credentials (
+  owner_id UUID PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  hash_algorithm TEXT NOT NULL DEFAULT 'bcrypt',
+  hash_cost INTEGER NOT NULL DEFAULT 12,
+  needs_rehash BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS owner_credentials_email_idx ON owner_credentials (email);
+CREATE INDEX IF NOT EXISTS owner_credentials_needs_rehash_idx ON owner_credentials (needs_rehash);
+
 CREATE TABLE IF NOT EXISTS owner_settings (
   owner_id UUID PRIMARY KEY,
   notification_email TEXT,

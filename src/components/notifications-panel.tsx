@@ -1,15 +1,32 @@
-import { useState, useRef, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { Bell, Check, Loader2 } from "@/components/heroicons";
-import { listNotifications, markNotificationRead, markAllNotificationsRead } from "@/lib/notifications.functions";
+import {
+  listNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+} from "@/lib/notifications.functions";
 import { formatRelative } from "@/lib/clients-store";
-import { motion, AnimatePresence } from "framer-motion";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+function dedupeNotifications<T extends { id: string; message: string; createdAt: string }>(
+  items: T[],
+): T[] {
+  const seen = new Set<string>();
+  const result: T[] = [];
+  for (const item of items) {
+    const key = item.message.trim();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(item);
+  }
+  return result;
+}
 
 export function NotificationsPanel() {
-  const [isOpen, setIsOpen] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const fetchNotifications = useServerFn(listNotifications);
@@ -19,8 +36,11 @@ export function NotificationsPanel() {
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ["notifications"],
     queryFn: () => fetchNotifications(),
-    refetchInterval: 5000, // Poll every 5s
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
   });
+
+  const displayNotifications = useMemo(() => dedupeNotifications(notifications), [notifications]);
 
   const markReadMutation = useMutation({
     mutationFn: (id: string) => markReadFn({ data: { id } }),
@@ -36,116 +56,110 @@ export function NotificationsPanel() {
     },
   });
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const unreadCount = displayNotifications.filter((n) => !n.read).length;
 
   return (
-    <div className="relative" ref={panelRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors border border-hairline"
-        aria-label="Notifications"
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="relative p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors border border-hairline"
+          aria-label="Notifications"
+        >
+          <Bell className="size-5" />
+          {unreadCount > 0 && (
+            <span className="absolute top-1 right-1 flex min-w-4 h-4 items-center justify-center rounded-full bg-destructive px-0.5 text-[9px] font-bold tabular-nums text-destructive-foreground">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </button>
+      </PopoverTrigger>
+
+      <PopoverContent
+        align="end"
+        side="bottom"
+        sideOffset={8}
+        collisionPadding={16}
+        className="w-[min(calc(100vw-2rem),24rem)] max-w-none p-0 rounded-2xl bg-surface border-hairline shadow-[0_12px_40px_rgba(0,0,0,0.25)] overflow-hidden"
       >
-        <Bell className="size-5" />
-        {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground animate-pulse">
-            {unreadCount}
+        <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-hairline bg-surface-muted/50">
+          <span className="text-xs font-bold uppercase tracking-[0.12em] text-foreground shrink-0">
+            Notifications
           </span>
-        )}
-      </button>
+          {unreadCount > 0 && (
+            <button
+              type="button"
+              onClick={() => markAllReadMutation.mutate()}
+              className="inline-flex items-center gap-1.5 text-xs text-[#7C5CFF] hover:text-[#6C4AFF] font-medium transition-colors shrink-0 whitespace-nowrap"
+            >
+              <Check className="size-3.5 shrink-0" />
+              <span>Mark all read</span>
+            </button>
+          )}
+        </div>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="absolute right-0 md:left-0 md:right-auto mt-2 w-80 sm:w-96 rounded-2xl bg-surface border border-hairline shadow-[0_12px_40px_rgba(0,0,0,0.15)] overflow-hidden z-50"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-hairline bg-surface-muted/50">
-              <span className="text-xs font-bold uppercase tracking-[0.12em] text-foreground">
-                Notifications
-              </span>
-              {unreadCount > 0 && (
-                <button
-                  onClick={() => markAllReadMutation.mutate()}
-                  className="text-xs text-[#7C5CFF] hover:text-[#6C4AFF] font-medium flex items-center gap-1 transition-colors"
-                >
-                  <Check className="size-3.5" /> Mark all read
-                </button>
-              )}
+        <div className="max-h-[min(360px,60vh)] overflow-y-auto overflow-x-hidden overscroll-contain">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-10 text-muted-foreground text-sm gap-2">
+              <Loader2 className="size-4 animate-spin text-[#7C5CFF]" />
+              <span>Loading...</span>
             </div>
-
-            {/* List */}
-            <div className="max-h-[360px] overflow-y-auto divide-y divide-hairline">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-10 text-muted-foreground text-sm gap-2">
-                  <Loader2 className="size-4 animate-spin text-[#7C5CFF]" />
-                  <span>Loading...</span>
-                </div>
-              ) : notifications.length === 0 ? (
-                <div className="py-12 text-center text-sm text-muted-foreground">
-                  All caught up! No notifications.
-                </div>
-              ) : (
-                notifications.map((n) => (
-                  <div
-                    key={n.id}
-                    className={`flex items-start justify-between p-4 transition-colors hover:bg-surface-muted/30 ${
-                      !n.read ? "bg-[#7C5CFF]/5" : ""
-                    }`}
-                  >
-                    <div className="flex-1 min-w-0 pr-3">
-                      {n.link ? (
-                        <Link
-                          to={n.link}
-                          onClick={() => {
-                            if (!n.read) markReadMutation.mutate(n.id);
-                            setIsOpen(false);
-                          }}
-                          className="block group"
-                        >
-                          <p className="text-xs text-foreground font-medium break-words leading-relaxed group-hover:underline">
-                            {n.message}
-                          </p>
-                        </Link>
-                      ) : (
-                        <p className="text-xs text-foreground font-medium break-words leading-relaxed">
+          ) : displayNotifications.length === 0 ? (
+            <div className="py-12 px-4 text-center text-sm text-muted-foreground">
+              All caught up! No notifications.
+            </div>
+          ) : (
+            <ul className="divide-y divide-hairline">
+              {displayNotifications.map((n) => (
+                <li
+                  key={n.id}
+                  className={`flex items-start gap-3 p-4 transition-colors hover:bg-surface-muted/30 ${
+                    !n.read ? "bg-[#7C5CFF]/5" : ""
+                  }`}
+                >
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    {n.link ? (
+                      <Link
+                        to={n.link}
+                        onClick={() => {
+                          if (!n.read) markReadMutation.mutate(n.id);
+                          setOpen(false);
+                        }}
+                        className="block group"
+                      >
+                        <p className="text-xs text-foreground font-medium leading-relaxed break-words group-hover:underline">
                           {n.message}
                         </p>
-                      )}
-                      <span className="text-[10px] text-muted-foreground mt-1.5 block">
-                        {formatRelative(n.createdAt)}
-                      </span>
-                    </div>
-
-                    {!n.read && (
-                      <button
-                        onClick={() => markReadMutation.mutate(n.id)}
-                        className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
-                        title="Mark as read"
-                      >
-                        <Check className="size-3.5" />
-                      </button>
+                      </Link>
+                    ) : (
+                      <p className="text-xs text-foreground font-medium leading-relaxed break-words">
+                        {n.message}
+                      </p>
                     )}
+                    <time
+                      dateTime={n.createdAt}
+                      className="mt-1.5 block text-[10px] tabular-nums text-muted-foreground"
+                    >
+                      {formatRelative(n.createdAt)}
+                    </time>
                   </div>
-                ))
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+
+                  {!n.read && (
+                    <button
+                      type="button"
+                      onClick={() => markReadMutation.mutate(n.id)}
+                      className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+                      title="Mark as read"
+                    >
+                      <Check className="size-3.5" />
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

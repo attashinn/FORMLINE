@@ -1,12 +1,33 @@
 import { useState, useEffect } from "react";
-import { createFileRoute, Outlet, redirect, useRouterState, useNavigate, Link } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Outlet,
+  redirect,
+  useRouterState,
+  useNavigate,
+  Link,
+} from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { auth } from "@clerk/tanstack-react-start/server";
 import { useClerk } from "@clerk/tanstack-react-start";
 import { useAuth } from "@/hooks/use-auth";
 import { ClientsProvider } from "@/lib/clients-store";
 import { Logo } from "@/components/logo";
-import { Bars3, X, Users, FileText, ClipboardList, LogOut, Plus, LayoutGrid, Mail, BarChart3, Settings, Zap, CreditCard } from "@/components/heroicons";
+import {
+  Bars3,
+  X,
+  Users,
+  FileText,
+  ClipboardList,
+  LogOut,
+  Plus,
+  LayoutGrid,
+  Mail,
+  BarChart3,
+  Settings,
+  Zap,
+  CreditCard,
+} from "@/components/heroicons";
 import { AnimatePresence, motion } from "framer-motion";
 import { DevBypassBanner } from "@/components/dev-bypass-banner";
 import { UserAvatar } from "@/components/user-avatar";
@@ -62,10 +83,10 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
     {
       title: "Workspace",
       items: [
-        { to: "/dashboard",    label: "Dashboard",    icon: LayoutGrid },
-        { to: "/analytics",    label: "Analytics",    icon: BarChart3  },
-        { to: "/automations",  label: "Automations",  icon: Zap        },
-        { to: "/clients",      label: "Clients",      icon: Users      },
+        { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
+        { to: "/analytics", label: "Analytics", icon: BarChart3 },
+        { to: "/automations", label: "Automations", icon: Zap },
+        { to: "/clients", label: "Clients", icon: Users },
       ],
     },
     {
@@ -85,9 +106,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
     },
     {
       title: "Account",
-      items: [
-        { to: "/settings", label: "Settings", icon: Settings },
-      ],
+      items: [{ to: "/settings", label: "Settings", icon: Settings }],
     },
   ];
 
@@ -121,7 +140,9 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                     )}
                     <Icon
                       className={`size-4.5 transition-colors ${
-                        active ? "text-[#7C5CFF]" : "text-muted-foreground group-hover:text-foreground"
+                        active
+                          ? "text-[#7C5CFF]"
+                          : "text-muted-foreground group-hover:text-foreground"
                       }`}
                     />
                     <span>{link.label}</span>
@@ -163,7 +184,9 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
               className="size-9 text-sm"
             />
             <div className="min-w-0">
-              <div className="truncate text-xs font-semibold text-foreground group-hover:text-white transition-colors">{fullName}</div>
+              <div className="truncate text-xs font-semibold text-foreground group-hover:text-white transition-colors">
+                {fullName}
+              </div>
               <div className="truncate text-[10px] text-muted-foreground">{email}</div>
             </div>
           </Link>
@@ -192,7 +215,7 @@ function AuthenticatedLayout() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 z-30 border-r border-hairline bg-surface/40 backdrop-blur-lg">
+      <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 z-30 border-r border-hairline bg-surface md:bg-surface/40 md:backdrop-blur-lg">
         <div className="flex h-16 shrink-0 items-center justify-between px-6 border-b border-hairline">
           <Link to="/dashboard" className="flex items-center">
             <Logo />
@@ -208,7 +231,7 @@ function AuthenticatedLayout() {
       <div className="flex-1 md:pl-64 flex flex-col min-w-0 min-h-screen">
         <DevBypassBanner />
         {/* Mobile top bar */}
-        <header className="flex md:hidden items-center justify-between h-16 px-4 border-b border-hairline bg-surface/40 backdrop-blur-lg sticky top-0 z-40">
+        <header className="flex md:hidden items-center justify-between h-16 px-4 border-b border-hairline bg-surface sticky top-0 z-40">
           <Link to="/dashboard" className="flex items-center">
             <Logo />
           </Link>
@@ -233,7 +256,7 @@ function AuthenticatedLayout() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setMobileOpen(false)}
-                className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden"
+                className="fixed inset-0 bg-background/90 z-40 md:hidden"
               />
               <motion.aside
                 initial={{ x: "-100%" }}

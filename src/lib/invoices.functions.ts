@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { sql } from "@/lib/db.server";
 import { requireClerkAuth } from "@/lib/auth.middleware";
+import { formatNotificationAmount } from "@/lib/notifications.server";
 
 export type InvoiceLineItem = {
   description: string;
@@ -50,7 +51,11 @@ const InvoicePayloadSchema = z.object({
 function parseLineItems(raw: unknown): InvoiceLineItem[] {
   if (Array.isArray(raw)) return raw as InvoiceLineItem[];
   if (typeof raw === "string") {
-    try { return JSON.parse(raw) ?? []; } catch { return []; }
+    try {
+      return JSON.parse(raw) ?? [];
+    } catch {
+      return [];
+    }
   }
   return [];
 }
@@ -128,7 +133,7 @@ export const createInvoice = createServerFn({ method: "POST" })
         : data.amount;
 
     const deliveryMethod = data.deliveryMethod ?? (data.sendAt ? "scheduled" : "immediate");
-    const dbSendAt = deliveryMethod === "scheduled" ? (data.sendAt || null) : null;
+    const dbSendAt = deliveryMethod === "scheduled" ? data.sendAt || null : null;
 
     const rows = await sql`
       INSERT INTO invoices (owner_id, client_id, title, amount, status, due_date, notes, line_items, send_at)
@@ -157,8 +162,8 @@ export const createInvoice = createServerFn({ method: "POST" })
       const { createNotification } = await import("./notifications.server");
       await createNotification(
         context.userId,
-        `New invoice "${data.title}" ($${computedAmount.toFixed(2)}) created`,
-        `/invoices`
+        `New invoice "${data.title}" ($${formatNotificationAmount(computedAmount)}) created`,
+        `/invoices`,
       );
     } catch (e) {
       console.error("Failed to trigger invoice notification:", e);
@@ -207,7 +212,7 @@ export const updateInvoice = createServerFn({ method: "POST" })
     z.object({
       id: z.string().uuid(),
       patch: InvoicePayloadSchema.partial(),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     const currentRows = await sql`
@@ -218,12 +223,23 @@ export const updateInvoice = createServerFn({ method: "POST" })
 
     const title = data.patch.title ?? String(current.title);
     const status = data.patch.status ?? String(current.status);
-    const dueDate = data.patch.dueDate !== undefined ? data.patch.dueDate : (current.due_date ? String(current.due_date) : null);
-    const notes = data.patch.notes !== undefined ? data.patch.notes : (current.notes ? String(current.notes) : "");
+    const dueDate =
+      data.patch.dueDate !== undefined
+        ? data.patch.dueDate
+        : current.due_date
+          ? String(current.due_date)
+          : null;
+    const notes =
+      data.patch.notes !== undefined
+        ? data.patch.notes
+        : current.notes
+          ? String(current.notes)
+          : "";
 
-    const lineItems = data.patch.lineItems !== undefined
-      ? data.patch.lineItems
-      : parseLineItems(current.line_items);
+    const lineItems =
+      data.patch.lineItems !== undefined
+        ? data.patch.lineItems
+        : parseLineItems(current.line_items);
 
     const computedAmount =
       lineItems.length > 0
@@ -231,7 +247,12 @@ export const updateInvoice = createServerFn({ method: "POST" })
         : (data.patch.amount ?? Number(current.amount));
 
     const deliveryMethod = data.patch.deliveryMethod;
-    let sendAtVal = data.patch.sendAt !== undefined ? data.patch.sendAt : (current.send_at ? String(current.send_at) : null);
+    let sendAtVal =
+      data.patch.sendAt !== undefined
+        ? data.patch.sendAt
+        : current.send_at
+          ? String(current.send_at)
+          : null;
     let sentAtVal = current.sent_at ? String(current.sent_at) : null;
     let triggerImmediateSend = false;
 
@@ -274,7 +295,7 @@ export const updateInvoice = createServerFn({ method: "POST" })
         await createNotification(
           context.userId,
           `Invoice "${title}" marked as ${status}`,
-          `/invoices`
+          `/invoices`,
         );
       } catch (e) {
         console.error("Failed to trigger invoice status notification:", e);
@@ -350,7 +371,7 @@ export const sendInvoice = createServerFn({ method: "POST" })
       await createNotification(
         context.userId,
         `Invoice "${inv.title}" sent to ${inv.clientEmail}`,
-        `/invoices`
+        `/invoices`,
       );
     } catch (e) {
       console.error("Failed to create sent notification:", e);

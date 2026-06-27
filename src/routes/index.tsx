@@ -1,11 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
-import { useAuth } from "@clerk/tanstack-react-start";
-import { Features } from "@/components/blocks/features-10";
+import { lazy, Suspense } from "react";
 import { HeroLogoMarquee } from "@/components/hero-logo-marquee";
-import { LandingNavbar } from "@/components/landing-navbar";
-import { Logo } from "@/components/logo";
+import { LandingShell } from "@/components/landing/landing-shell";
 import { ShinyButton } from "@/components/ui/shiny-button";
+import { useLandingAuth } from "@/lib/landing-auth";
 import {
   ArrowRight,
   BarChart3,
@@ -25,6 +23,10 @@ import {
   Zap,
 } from "@/components/heroicons";
 
+const Features = lazy(() =>
+  import("@/components/blocks/features-10").then((m) => ({ default: m.Features })),
+);
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -37,41 +39,18 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Formline" },
       { property: "og:image", content: "/formline-brand.png" },
     ],
+    links: [{ rel: "preload", href: "/hero-dashboard.svg", as: "image", type: "image/svg+xml" }],
   }),
   component: Home,
 });
 
 function Home() {
   const navigate = useNavigate();
-  const { isSignedIn: clerkSignedIn } = useAuth();
-  const [isBypassed, setIsBypassed] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setIsBypassed(document.cookie.includes("bypass=true"));
-    }
-  }, []);
-
-  const isSignedIn = clerkSignedIn || isBypassed;
+  const isSignedIn = useLandingAuth();
 
   return (
-    <div className="dark relative min-h-screen bg-[#0A0A0B] text-[#E5E5E7] antialiased">
-      {/* Brand background */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 bg-[#0A0A0B] bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url(/formline-brand.png)" }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 bg-gradient-to-b from-[#0A0A0B]/55 via-[#0A0A0B]/82 to-[#0A0A0B]"
-      />
-
-      <LandingNavbar isSignedIn={isSignedIn} />
-
-      {/* hero — PrebuiltUI-style layout, Formline branding */}
+    <LandingShell isSignedIn={isSignedIn}>
       <header className="relative flex flex-col items-center overflow-hidden">
-        {/* Side guide lines */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 top-0 bottom-0 flex justify-between px-4 md:px-16 lg:px-24 xl:px-32"
@@ -81,18 +60,13 @@ function Home() {
         </div>
 
         <div className="relative z-10 flex w-full flex-col items-center px-4 pt-16 pb-0 text-center sm:px-6 sm:pt-24 md:px-16 lg:px-24 xl:px-32">
-          {/* Badge */}
           <div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/5 py-1.5 pl-2.5 pr-4">
             <span className="relative flex size-3.5 items-center justify-center">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#7C5CFF] opacity-60 duration-700" />
-              <span className="relative inline-flex size-2 rounded-full bg-[#7C5CFF]" />
+              <span className="relative inline-flex size-2 rounded-full bg-[#7C5CFF] hero-live-dot" />
             </span>
-            <p className="text-xs text-white/70 sm:text-sm">
-              Client intake for modern studios
-            </p>
+            <p className="text-xs text-white/70 sm:text-sm">Client intake for modern studios</p>
           </div>
 
-          {/* Headline */}
           <h1 className="mt-8 max-w-2xl bg-gradient-to-r from-white via-white to-white/45 bg-clip-text text-4xl leading-tight font-semibold tracking-tight text-transparent sm:text-5xl md:text-[4rem]/[1.1]">
             Send forms.
             <br />
@@ -104,7 +78,6 @@ function Home() {
             calm, organized workspace.
           </p>
 
-          {/* Keep existing CTAs */}
           <div className="mt-10 flex items-center justify-center gap-3">
             {isSignedIn ? (
               <Link
@@ -123,7 +96,6 @@ function Home() {
           <HeroLogoMarquee />
         </div>
 
-        {/* Divider with corner marks */}
         <div className="relative z-10 mt-12 w-full border-b border-white/10">
           <div
             aria-hidden
@@ -134,21 +106,23 @@ function Home() {
           </div>
         </div>
 
-        {/* Dashboard preview — full bleed frame */}
         <div className="relative z-10 w-full px-4 md:px-16 lg:px-24 xl:px-32">
           <div className="flex w-full items-center justify-center bg-white/[0.04] px-4 py-4 pb-8 md:pt-8 md:pb-12">
             <img
-              src="/hero-dashboard.png"
+              src="/hero-dashboard.svg"
               alt="Formline workspace dashboard showing intake trends, form stats, and recent activity"
               className="block h-auto w-full max-w-6xl"
+              width={1207}
+              height={929}
               loading="eager"
+              fetchPriority="high"
+              decoding="async"
             />
           </div>
         </div>
       </header>
 
-      {/* features */}
-      <section id="features" className="border-t border-white/5 py-16 sm:py-24">
+      <section id="features" className="landing-section border-t border-white/5 py-16 sm:py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="max-w-2xl">
             <span className="text-xs font-medium uppercase tracking-[0.18em] text-[#7C5CFF]">
@@ -205,10 +179,18 @@ function Home() {
         </div>
       </section>
 
-      <Features />
+      <Suspense
+        fallback={
+          <div
+            className="landing-section border-t border-white/5 py-24 min-h-[320px]"
+            aria-hidden
+          />
+        }
+      >
+        <Features />
+      </Suspense>
 
-      {/* workspace / client profiles */}
-      <section id="workspace" className="border-t border-white/5 py-24">
+      <section id="workspace" className="landing-section border-t border-white/5 py-24">
         <div className="mx-auto max-w-6xl px-6">
           <div className="max-w-2xl">
             <span className="text-xs font-medium uppercase tracking-[0.18em] text-[#7C5CFF]">
@@ -268,7 +250,6 @@ function Home() {
         </div>
       </section>
 
-      {/* use cases */}
       <section id="use-cases" className="border-t border-white/5 py-24">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center">
@@ -316,11 +297,10 @@ function Home() {
         </div>
       </section>
 
-      {/* how it works */}
       <section id="how" className="border-t border-white/5 py-24">
         <div className="mx-auto max-w-6xl px-6">
           <h2 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
-            Three steps. That's it.
+            Three steps. That&apos;s it.
           </h2>
           <div className="mt-16 grid gap-8 md:grid-cols-3">
             {[
@@ -353,7 +333,6 @@ function Home() {
         </div>
       </section>
 
-      {/* pricing / CTA */}
       <section id="pricing" className="relative border-t border-white/5 py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="max-w-2xl">
@@ -430,13 +409,6 @@ function Home() {
           </div>
         </div>
       </section>
-
-      <footer className="border-t border-white/5 py-10">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 text-xs text-white/40">
-          <Logo className="h-5 opacity-60" />
-          <div>Crafted with care.</div>
-        </div>
-      </footer>
-    </div>
+    </LandingShell>
   );
 }

@@ -1,16 +1,13 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { SignIn, SignUp, useAuth } from "@clerk/tanstack-react-start";
+import { useAuth, useSignIn } from "@clerk/tanstack-react-start";
 import { Logo } from "@/components/logo";
-import { clerkAppearance } from "@/lib/clerk-appearance";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { AUTH_LOGIN_ERROR, AUTH_REGISTRATION_ERROR } from "@/lib/auth.constants";
 
-const authProps = {
-  routing: "hash" as const,
-  signInUrl: "/auth",
-  signUpUrl: "/auth",
-  fallbackRedirectUrl: "/dashboard",
-  appearance: clerkAppearance,
-};
+const inputClassName =
+  "h-11 border-white/10 bg-[#141418] text-[#F5F5F7] placeholder:text-white/40 focus-visible:ring-[#7C5CFF]";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -63,9 +60,10 @@ function AuthPage() {
                 Loading…
               </div>
             ) : (
-              <SignIn {...authProps} />
+              <SignInForm />
             )}
             <button
+              type="button"
               onClick={() => setMode("signup")}
               className="mt-6 text-sm text-white/60 hover:text-white transition-colors"
             >
@@ -79,9 +77,10 @@ function AuthPage() {
                 Loading…
               </div>
             ) : (
-              <SignUp {...authProps} />
+              <SignUpForm />
             )}
             <button
+              type="button"
               onClick={() => setMode("signin")}
               className="mt-6 text-sm text-white/60 hover:text-white transition-colors"
             >
@@ -91,5 +90,233 @@ function AuthPage() {
         )}
       </div>
     </div>
+  );
+}
+
+function SignInForm() {
+  const navigate = useNavigate();
+  const { signIn, setActive, isLoaded } = useSignIn();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!isLoaded || !signIn) return;
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/auth/sign-in", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const payload = (await response.json()) as {
+        signInToken?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !payload.signInToken) {
+        setError(AUTH_LOGIN_ERROR);
+        return;
+      }
+
+      const result = await signIn.create({
+        strategy: "ticket",
+        ticket: payload.signInToken,
+      });
+
+      if (result.status === "complete" && result.createdSessionId) {
+        await setActive({ session: result.createdSessionId });
+        navigate({ to: "/dashboard", replace: true });
+        return;
+      }
+
+      setError(AUTH_LOGIN_ERROR);
+    } catch {
+      setError(AUTH_LOGIN_ERROR);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="w-full space-y-4 rounded-2xl border border-white/10 bg-[#0A0A0B] p-6"
+    >
+      <div className="space-y-2">
+        <Label htmlFor="sign-in-email" className="text-white/75">
+          Email
+        </Label>
+        <Input
+          id="sign-in-email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={inputClassName}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="sign-in-password" className="text-white/75">
+          Password
+        </Label>
+        <Input
+          id="sign-in-password"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className={inputClassName}
+        />
+      </div>
+      {error ? <p className="text-sm text-[#F87171]">{error}</p> : null}
+      <button
+        type="submit"
+        disabled={submitting}
+        className="h-11 w-full rounded-xl bg-[#7C5CFF] text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+      >
+        {submitting ? "Signing in…" : "Continue"}
+      </button>
+    </form>
+  );
+}
+
+function SignUpForm() {
+  const navigate = useNavigate();
+  const { signIn, setActive, isLoaded } = useSignIn();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!isLoaded || !signIn) return;
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/auth/sign-up", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, username, displayName }),
+      });
+
+      const payload = (await response.json()) as {
+        signInToken?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !payload.signInToken) {
+        setError(AUTH_REGISTRATION_ERROR);
+        return;
+      }
+
+      const result = await signIn.create({
+        strategy: "ticket",
+        ticket: payload.signInToken,
+      });
+
+      if (result.status === "complete" && result.createdSessionId) {
+        await setActive({ session: result.createdSessionId });
+        navigate({ to: "/dashboard", replace: true });
+        return;
+      }
+
+      setError(AUTH_REGISTRATION_ERROR);
+    } catch {
+      setError(AUTH_REGISTRATION_ERROR);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="w-full space-y-4 rounded-2xl border border-white/10 bg-[#0A0A0B] p-6"
+    >
+      <div className="space-y-2">
+        <Label htmlFor="sign-up-display-name" className="text-white/75">
+          Display name
+        </Label>
+        <Input
+          id="sign-up-display-name"
+          name="displayName"
+          type="text"
+          autoComplete="name"
+          required
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          className={inputClassName}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="sign-up-username" className="text-white/75">
+          Username
+        </Label>
+        <Input
+          id="sign-up-username"
+          name="username"
+          type="text"
+          autoComplete="username"
+          required
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          className={inputClassName}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="sign-up-email" className="text-white/75">
+          Email
+        </Label>
+        <Input
+          id="sign-up-email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={inputClassName}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="sign-up-password" className="text-white/75">
+          Password
+        </Label>
+        <Input
+          id="sign-up-password"
+          name="password"
+          type="password"
+          autoComplete="new-password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className={inputClassName}
+        />
+      </div>
+      {error ? <p className="text-sm text-[#F87171]">{error}</p> : null}
+      <button
+        type="submit"
+        disabled={submitting}
+        className="h-11 w-full rounded-xl bg-[#7C5CFF] text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+      >
+        {submitting ? "Creating account…" : "Create account"}
+      </button>
+    </form>
   );
 }

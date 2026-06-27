@@ -25,7 +25,7 @@ export const requireClerkAuth = createMiddleware({ type: "function" }).server(as
   }
   const { userId } = await auth();
   if (!userId) {
-    throw new Error("Unauthorized: Not logged in");
+    throw new Error("Authentication required");
   }
   const mappedUuid = getDeterministicUuid(userId);
   await syncOwnerProfileFromClerk({ clerkUserId: userId, ownerId: mappedUuid });

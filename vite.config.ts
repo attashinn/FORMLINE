@@ -17,4 +17,16 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ["@tanstack/react-start"],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("@clerk")) return "vendor-clerk";
+          if (id.includes("framer-motion") || id.includes("motion-dom")) return "vendor-motion";
+          if (id.includes("@radix-ui")) return "vendor-radix";
+        },
+      },
+    },
+  },
 });

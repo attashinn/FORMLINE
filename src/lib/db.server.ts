@@ -15,4 +15,7 @@ function getSql() {
 
 /** Tagged-template SQL client — server-only (.server.ts). */
 export const sql = ((strings: TemplateStringsArray, ...values: unknown[]) =>
-  getSql()(strings, ...values)) as ReturnType<typeof neon>;
+  getSql()(strings, ...values)) as unknown as <T extends Record<string, any> = Record<string, any>>(
+  strings: TemplateStringsArray,
+  ...values: unknown[]
+) => Promise<T[]>;
