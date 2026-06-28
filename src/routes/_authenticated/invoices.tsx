@@ -11,7 +11,9 @@ import {
   sendInvoice,
   type InvoiceRecord,
   type InvoiceLineItem,
+  type CreateInvoiceResult,
 } from "@/lib/invoices.functions";
+import { toastInvoiceCreateResult } from "@/lib/invoice-delivery-toast";
 import {
   Plus,
   X,
@@ -96,18 +98,14 @@ function InvoicesPage() {
 
   const createMutation = useMutation({
     mutationFn: (data: Parameters<typeof createInv>[0]["data"]) => createInv({ data }),
-    onSuccess: () => {
+    onSuccess: (result: CreateInvoiceResult) => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       queryClient.invalidateQueries({ queryKey: ["clients"] });
-      toast.success(
-        deliveryMethod === "scheduled"
-          ? "Invoice scheduled and will be sent at the chosen time"
-          : deliveryMethod === "immediate"
-            ? status === "Paid"
-              ? "Invoice created & receipt emailed"
-              : "Invoice created & sent to client"
-            : "Invoice created successfully",
-      );
+      toastInvoiceCreateResult({
+        deliveryMethod,
+        status,
+        emailDelivery: result.emailDelivery,
+      });
       closeModal();
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to create invoice"),

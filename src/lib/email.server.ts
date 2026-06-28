@@ -730,12 +730,16 @@ export async function sendInvoiceEmail(opts: {
 
   if (!finalized.ok) {
     const message = finalized.error?.message || "Failed to send email";
+    const friendly =
+      message.includes("API key is invalid") || finalized.error?.name === "validation_error"
+        ? "Resend API key is invalid. Update RESEND_API_KEY in your .env file with a key from resend.com/api-keys."
+        : message;
     if (fromEmail.includes("@resend.dev")) {
       throw new Error(
-        `Resend testing restriction: "${message}". Simulated preview at: ${appUrl}${previewUrl}`,
+        `Resend testing restriction: "${friendly}". Simulated preview at: ${appUrl}${previewUrl}`,
       );
     }
-    throw new Error(`${message}. Simulated preview at: ${appUrl}${previewUrl}`);
+    throw new Error(`${friendly} Preview saved at: ${appUrl}${previewUrl}`);
   }
 
   return finalized.data;

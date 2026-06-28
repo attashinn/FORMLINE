@@ -46,12 +46,17 @@ export type CreateClientFromSourceResult = {
 const PLACEHOLDER_EMAIL = "no-email@example.com";
 
 /**
- * Dedup rule: clients are matched per owner by case-insensitive email.
- * Placeholder / missing emails never dedupe — each creates a separate client.
+ * Dedup rule: form/automation flows match per owner by case-insensitive email.
+ * Manual intake always creates a new client — never overwrites an existing profile.
  */
 export function isDedupableEmail(email: string | undefined | null): boolean {
   if (!email || !email.trim()) return false;
   return email.trim().toLowerCase() !== PLACEHOLDER_EMAIL;
+}
+
+/** Only automatic flows dedupe by email; manual intake always inserts a new row. */
+export function shouldDedupeByEmail(source: ClientSource): boolean {
+  return source === "form_convert" || source === "automation";
 }
 
 const ACTIVITY_BY_SOURCE: Record<ClientSource, string> = {
@@ -65,6 +70,19 @@ const DEDUP_ACTIVITY_BY_SOURCE: Record<ClientSource, string> = {
   form_convert: "Linked to existing client from form submission",
   automation: "Linked submission to existing client via Automation",
 };
+
+async function mergeExistingClientFromIntake(clientId: string, fields: ClientFieldsInput) {
+  // Form/automation dedup: append notes only — never overwrite the client profile.
+  if (fields.notes?.trim()) {
+    await sql`
+      INSERT INTO client_notes (client_id, body)
+      VALUES (${clientId}, ${fields.notes})
+    `;
+  }
+  await sql`
+    UPDATE clients SET updated_at = NOW() WHERE id = ${clientId}::uuid
+  `;
+}
 
 async function findClientByEmail(ownerId: string, email: string) {
   const rows = await sql`
@@ -133,17 +151,12 @@ export async function createClientFromSource(
   const { ownerId, source, fields, submissionId } = opts;
   const email = fields.email.trim() || PLACEHOLDER_EMAIL;
 
-  if (isDedupableEmail(email)) {
+  if (shouldDedupeByEmail(source) && isDedupableEmail(email)) {
     const existing = await findClientByEmail(ownerId, email);
     if (existing) {
       const clientId = String(existing.id);
 
-      if (fields.notes?.trim()) {
-        await sql`
-          INSERT INTO client_notes (client_id, body)
-          VALUES (${clientId}, ${fields.notes})
-        `;
-      }
+      await mergeExistingClientFromIntake(clientId, fields);
 
       await sql`
         INSERT INTO client_activity (client_id, label, kind)

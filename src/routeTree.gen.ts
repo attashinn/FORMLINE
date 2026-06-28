@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkspaceRouteImport } from './routes/workspace'
 import { Route as UseCasesRouteImport } from './routes/use-cases'
 import { Route as TemplatesRouteImport } from './routes/templates'
+import { Route as SsoCallbackRouteImport } from './routes/sso-callback'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as FeaturesRouteImport } from './routes/features'
@@ -53,6 +54,11 @@ const UseCasesRoute = UseCasesRouteImport.update({
 const TemplatesRoute = TemplatesRouteImport.update({
   id: '/templates',
   path: '/templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SsoCallbackRoute = SsoCallbackRouteImport.update({
+  id: '/sso-callback',
+  path: '/sso-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -199,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/features': typeof FeaturesRoute
   '/how-it-works': typeof HowItWorksRoute
   '/pricing': typeof PricingRoute
+  '/sso-callback': typeof SsoCallbackRoute
   '/templates': typeof TemplatesRoute
   '/use-cases': typeof UseCasesRoute
   '/workspace': typeof WorkspaceRoute
@@ -230,6 +237,7 @@ export interface FileRoutesByTo {
   '/features': typeof FeaturesRoute
   '/how-it-works': typeof HowItWorksRoute
   '/pricing': typeof PricingRoute
+  '/sso-callback': typeof SsoCallbackRoute
   '/templates': typeof TemplatesRoute
   '/use-cases': typeof UseCasesRoute
   '/workspace': typeof WorkspaceRoute
@@ -263,6 +271,7 @@ export interface FileRoutesById {
   '/features': typeof FeaturesRoute
   '/how-it-works': typeof HowItWorksRoute
   '/pricing': typeof PricingRoute
+  '/sso-callback': typeof SsoCallbackRoute
   '/templates': typeof TemplatesRoute
   '/use-cases': typeof UseCasesRoute
   '/workspace': typeof WorkspaceRoute
@@ -296,6 +305,7 @@ export interface FileRouteTypes {
     | '/features'
     | '/how-it-works'
     | '/pricing'
+    | '/sso-callback'
     | '/templates'
     | '/use-cases'
     | '/workspace'
@@ -327,6 +337,7 @@ export interface FileRouteTypes {
     | '/features'
     | '/how-it-works'
     | '/pricing'
+    | '/sso-callback'
     | '/templates'
     | '/use-cases'
     | '/workspace'
@@ -359,6 +370,7 @@ export interface FileRouteTypes {
     | '/features'
     | '/how-it-works'
     | '/pricing'
+    | '/sso-callback'
     | '/templates'
     | '/use-cases'
     | '/workspace'
@@ -392,6 +404,7 @@ export interface RootRouteChildren {
   FeaturesRoute: typeof FeaturesRoute
   HowItWorksRoute: typeof HowItWorksRoute
   PricingRoute: typeof PricingRoute
+  SsoCallbackRoute: typeof SsoCallbackRoute
   TemplatesRoute: typeof TemplatesRoute
   UseCasesRoute: typeof UseCasesRoute
   WorkspaceRoute: typeof WorkspaceRoute
@@ -426,6 +439,13 @@ declare module '@tanstack/react-router' {
       path: '/templates'
       fullPath: '/templates'
       preLoaderRoute: typeof TemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sso-callback': {
+      id: '/sso-callback'
+      path: '/sso-callback'
+      fullPath: '/sso-callback'
+      preLoaderRoute: typeof SsoCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -662,6 +682,7 @@ const rootRouteChildren: RootRouteChildren = {
   FeaturesRoute: FeaturesRoute,
   HowItWorksRoute: HowItWorksRoute,
   PricingRoute: PricingRoute,
+  SsoCallbackRoute: SsoCallbackRoute,
   TemplatesRoute: TemplatesRoute,
   UseCasesRoute: UseCasesRoute,
   WorkspaceRoute: WorkspaceRoute,

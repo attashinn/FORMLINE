@@ -66,7 +66,7 @@ type Ctx = {
     c: Omit<ClientRecord, "id" | "createdAt" | "updatedAt" | "activity" | "status"> & {
       status?: ClientStatus;
     },
-  ) => Promise<ClientRecord>;
+  ) => Promise<ClientRecord & { isNew: boolean }>;
   updateClient: (
     id: string,
     patch: Partial<ClientRecord>,
@@ -76,6 +76,14 @@ type Ctx = {
 };
 
 const ClientsContext = createContext<Ctx | null>(null);
+
+function upsertClientInCache(queryClient: ReturnType<typeof useQueryClient>, client: ClientRecord) {
+  queryClient.setQueryData<ClientRecord[]>(["clients"], (prev) => {
+    const list = prev ?? [];
+    const without = list.filter((c) => c.id !== client.id);
+    return [client, ...without];
+  });
+}
 
 export function ClientsProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
@@ -87,15 +95,19 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["clients"],
     queryFn: () => fetchClients(),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const getClient = useCallback((id: string) => clients.find((c) => c.id === id), [clients]);
 
   const addClient: Ctx["addClient"] = useCallback(
     async (draft) => {
-      const record = await addClientFn({ data: draft });
-      await queryClient.invalidateQueries({ queryKey: ["clients"] });
-      return record as ClientRecord;
+      const result = await addClientFn({ data: draft });
+      const record = result.client as ClientRecord;
+      upsertClientInCache(queryClient, record);
+      void queryClient.invalidateQueries({ queryKey: ["clients"] });
+      return { ...record, isNew: result.isNew };
     },
     [addClientFn, queryClient],
   );
@@ -103,7 +115,8 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
   const updateClient: Ctx["updateClient"] = useCallback(
     async (id, patch, activityLabel) => {
       const record = await updateClientFn({ data: { id, patch, activityLabel } });
-      await queryClient.invalidateQueries({ queryKey: ["clients"] });
+      upsertClientInCache(queryClient, record as ClientRecord);
+      void queryClient.invalidateQueries({ queryKey: ["clients"] });
       return record as ClientRecord;
     },
     [updateClientFn, queryClient],

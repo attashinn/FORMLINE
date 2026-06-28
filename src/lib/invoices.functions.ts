@@ -30,6 +30,45 @@ export type InvoiceRecord = {
   updatedAt: string;
 };
 
+export type InvoiceEmailDelivery = {
+  sent: boolean;
+  error?: string;
+  previewUrl?: string;
+};
+
+export type CreateInvoiceResult = {
+  invoice: InvoiceRecord;
+  emailDelivery?: InvoiceEmailDelivery;
+};
+
+function extractPreviewUrl(message: string): string | undefined {
+  const match = message.match(/Preview at:\s*(\S+)/i);
+  return match?.[1];
+}
+
+async function attemptInvoiceEmailDelivery(opts: {
+  to: string;
+  clientName: string;
+  clientCompany: string;
+  invoiceTitle: string;
+  invoiceId: string;
+  amount: number;
+  status: string;
+  dueDate?: string;
+  notes?: string;
+  lineItems: InvoiceLineItem[];
+}): Promise<InvoiceEmailDelivery> {
+  try {
+    const { sendInvoiceEmail } = await import("./email.server");
+    await sendInvoiceEmail(opts);
+    return { sent: true };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : "Failed to send invoice email";
+    console.error("Invoice email delivery failed:", error);
+    return { sent: false, error, previewUrl: extractPreviewUrl(error) };
+  }
+}
+
 const LineItemSchema = z.object({
   description: z.string().min(1).max(500),
   qty: z.number().min(0.001),
@@ -170,30 +209,29 @@ export const createInvoice = createServerFn({ method: "POST" })
     }
 
     // If delivery is immediate, send immediately
+    let emailDelivery: InvoiceEmailDelivery | undefined;
     if (deliveryMethod === "immediate") {
-      try {
-        const clientRow = await sql`
-          SELECT email, full_name, company FROM clients WHERE id = ${data.clientId} LIMIT 1
-        `;
-        if (clientRow.length > 0) {
-          const { sendInvoiceEmail } = await import("./email.server");
-          await sendInvoiceEmail({
-            to: String(clientRow[0].email),
-            clientName: String(clientRow[0].full_name),
-            clientCompany: String(clientRow[0].company),
-            invoiceTitle: data.title,
-            invoiceId: String(rows[0].id),
-            amount: computedAmount,
-            status: data.status,
-            dueDate: data.dueDate,
-            notes: data.notes,
-            lineItems,
-          });
-          // Mark as sent
+      const clientRow = await sql`
+        SELECT email, full_name, company FROM clients WHERE id = ${data.clientId} LIMIT 1
+      `;
+      if (clientRow.length > 0) {
+        emailDelivery = await attemptInvoiceEmailDelivery({
+          to: String(clientRow[0].email),
+          clientName: String(clientRow[0].full_name),
+          clientCompany: String(clientRow[0].company),
+          invoiceTitle: data.title,
+          invoiceId: String(rows[0].id),
+          amount: computedAmount,
+          status: data.status,
+          dueDate: data.dueDate,
+          notes: data.notes,
+          lineItems,
+        });
+        if (emailDelivery.sent) {
           await sql`UPDATE invoices SET sent_at = NOW() WHERE id = ${rows[0].id}`;
         }
-      } catch (e) {
-        console.error("Failed to send invoice email:", e);
+      } else {
+        emailDelivery = { sent: false, error: "Client not found for email delivery" };
       }
     }
 
@@ -203,7 +241,10 @@ export const createInvoice = createServerFn({ method: "POST" })
       FROM invoices i JOIN clients c ON i.client_id = c.id
       WHERE i.id = ${rows[0].id}
     `;
-    return normalizeInvoice(finalRows[0] as Record<string, unknown>);
+    return {
+      invoice: normalizeInvoice(finalRows[0] as Record<string, unknown>),
+      emailDelivery,
+    };
   });
 
 export const updateInvoice = createServerFn({ method: "POST" })

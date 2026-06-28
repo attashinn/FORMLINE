@@ -125,8 +125,8 @@ async function performSignIn(email: string, password: string) {
     const ownerId = getDeterministicUuid(user.id);
     await migrateClerkPasswordOnLogin({ ownerId, email, plaintext: password });
     return createClerkSessionForUser(user.id, email);
-  } catch {
-    console.warn("[auth] Sign-in rejected");
+  } catch (err) {
+    console.warn("[auth] Sign-in rejected", err);
     await finalizeFailedLogin(email);
     return authLoginErrorResponse();
   }
@@ -171,8 +171,8 @@ export async function handleSignUpRequest(raw: unknown) {
     });
 
     return authJsonResponse({ signInToken: signInToken.token }, 200);
-  } catch {
-    console.warn("[auth] Sign-up rejected");
+  } catch (err) {
+    console.warn("[auth] Sign-up rejected", err);
     return authRegistrationErrorResponse();
   }
 }

@@ -270,7 +270,7 @@ function Canvas({ auto, onChange, forms }: { auto: Automation; onChange: (a: Aut
   }
 
   return (
-    <div className="flex h-full overflow-hidden relative">
+    <div className="flex h-full overflow-hidden relative" data-lenis-prevent>
 
       {/* ── Left Sidebar Overlay Backdrop on Mobile ── */}
       <AnimatePresence>
@@ -289,7 +289,7 @@ function Canvas({ auto, onChange, forms }: { auto: Automation; onChange: (a: Aut
       <aside className={`
         fixed inset-y-0 left-0 w-60 z-50 md:z-auto md:relative md:flex flex-col bg-[#0D0D14] border-r border-hairline transition-transform duration-300 ease-in-out shrink-0 overflow-y-auto
         ${showPalette ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
-      `}>
+      `} data-lenis-prevent>
         <div className="flex items-center justify-between px-4 py-3 border-b border-hairline">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Node Library</div>
@@ -327,6 +327,7 @@ function Canvas({ auto, onChange, forms }: { auto: Automation; onChange: (a: Aut
       {/* ── Main Canvas ── */}
       <div
         className="relative flex-1 overflow-hidden select-none"
+        data-lenis-prevent
         style={{ background: "#08080F", backgroundImage: "radial-gradient(circle,rgba(255,255,255,0.055) 1px,transparent 1px)", backgroundSize: "24px 24px" }}
         onMouseMove={onMove}
         onMouseUp={onUp}
@@ -478,6 +479,7 @@ function Canvas({ auto, onChange, forms }: { auto: Automation; onChange: (a: Aut
             initial={{ x: 280, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 280, opacity: 0 }}
             transition={{ type: "spring", damping: 26, stiffness: 220 }}
             className="fixed inset-y-0 right-0 w-72 md:relative md:flex z-50 md:z-auto border-l border-hairline bg-[#0D0D14] flex flex-col overflow-y-auto shadow-2xl md:shadow-none"
+            data-lenis-prevent
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-hairline">
               <div>
@@ -836,7 +838,7 @@ function AutomationsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
+      <div className="fixed inset-0 z-40 flex items-center justify-center bg-background md:left-64">
         <Loader2 className="size-8 animate-spin text-[#7C5CFF]" />
       </div>
     );
@@ -844,7 +846,7 @@ function AutomationsPage() {
 
   /* ── Editor ── */
   if (editId && editing) return (
-    <div className="flex flex-col h-screen bg-[#08080F]">
+    <div className="fixed inset-0 z-40 flex flex-col bg-[#08080F] md:left-64">
       {/* Editor header */}
       <header className="flex items-center justify-between px-5 h-14 border-b border-hairline bg-[#0D0D14]/80 backdrop-blur shrink-0 z-10">
         <div className="flex items-center gap-4">
@@ -898,8 +900,17 @@ function AutomationsPage() {
             </p>
           </div>
           <button onClick={newAuto}
-            className="inline-flex h-10.5 items-center gap-2 rounded-xl bg-foreground px-5 text-xs font-semibold text-background hover:opacity-90 transition-opacity self-start md:self-auto shadow-md">
-            <Plus className="size-4" /> Create Automation
+            disabled={createMut.isPending}
+            className="inline-flex h-10.5 items-center gap-2 rounded-xl bg-foreground px-5 text-xs font-semibold text-background hover:opacity-90 transition-opacity self-start md:self-auto shadow-md disabled:opacity-50">
+            {createMut.isPending ? (
+              <>
+                <Loader2 className="size-4 animate-spin" /> Creating…
+              </>
+            ) : (
+              <>
+                <Plus className="size-4" /> Create Automation
+              </>
+            )}
           </button>
         </motion.section>
 

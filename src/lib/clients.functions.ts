@@ -171,7 +171,7 @@ export const createClient = createServerFn({ method: "POST" })
   .middleware([requireClerkAuth])
   .inputValidator((d: unknown) => ClientPayloadSchema.parse(d))
   .handler(async ({ context, data }) => {
-    const { clientId } = await createClientFromSource({
+    const { clientId, isNew } = await createClientFromSource({
       ownerId: context.userId,
       source: "intake",
       fields: {
@@ -197,17 +197,19 @@ export const createClient = createServerFn({ method: "POST" })
 
     const row = await getOwnedClientRow(clientId, context.userId);
     const client = await hydrateClient(row);
-    try {
-      const { createNotification } = await import("./notifications.server");
-      await createNotification(
-        context.userId,
-        `New client intake submitted for ${client.company}`,
-        `/clients/${client.id}`
-      );
-    } catch (e) {
-      console.error("Failed to trigger client intake notification:", e);
+    if (isNew) {
+      try {
+        const { createNotification } = await import("./notifications.server");
+        await createNotification(
+          context.userId,
+          `New client intake submitted for ${client.company}`,
+          `/clients/${client.id}`,
+        );
+      } catch (e) {
+        console.error("Failed to trigger client intake notification:", e);
+      }
     }
-    return client;
+    return { client, isNew };
   });
 
 export const updateClient = createServerFn({ method: "POST" })

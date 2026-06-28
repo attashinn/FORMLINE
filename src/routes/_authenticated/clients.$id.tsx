@@ -53,7 +53,9 @@ import {
   sendInvoice,
   type InvoiceRecord,
   type InvoiceLineItem,
+  type CreateInvoiceResult,
 } from "@/lib/invoices.functions";
+import { toastInvoiceCreateResult } from "@/lib/invoice-delivery-toast";
 import { InvoiceLineItemsEditor, invoiceInputClass } from "@/components/invoice-line-items-editor";
 
 export const Route = createFileRoute("/_authenticated/clients/$id")({
@@ -1067,19 +1069,15 @@ function ClientInvoicesSection({
 
   const createMutation = useMutation({
     mutationFn: (data: Parameters<typeof createInv>[0]["data"]) => createInv({ data }),
-    onSuccess: () => {
+    onSuccess: (result: CreateInvoiceResult) => {
       queryClient.invalidateQueries({ queryKey: ["invoices", clientId] });
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       queryClient.invalidateQueries({ queryKey: ["clients"] });
-      toast.success(
-        deliveryMethod === "scheduled"
-          ? "Invoice scheduled"
-          : deliveryMethod === "immediate"
-            ? status === "Paid"
-              ? "Invoice created & receipt emailed"
-              : "Invoice created & sent"
-            : "Invoice created successfully",
-      );
+      toastInvoiceCreateResult({
+        deliveryMethod,
+        status,
+        emailDelivery: result.emailDelivery,
+      });
       closeModal();
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to create invoice"),

@@ -176,6 +176,10 @@ CREATE TABLE IF NOT EXISTS invoices (
   amount NUMERIC(12,2) NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'Unpaid',
   due_date TIMESTAMPTZ,
+  notes TEXT NOT NULL DEFAULT '',
+  line_items JSONB NOT NULL DEFAULT '[]'::jsonb,
+  send_at TIMESTAMPTZ,
+  sent_at TIMESTAMPTZ,
   issued_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -184,6 +188,12 @@ CREATE TABLE IF NOT EXISTS invoices (
 
 CREATE INDEX IF NOT EXISTS invoices_owner_id_idx ON invoices (owner_id);
 CREATE INDEX IF NOT EXISTS invoices_client_id_idx ON invoices (client_id);
+
+-- Backfill columns for databases created before line items / notes support
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS notes TEXT NOT NULL DEFAULT '';
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS line_items JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS send_at TIMESTAMPTZ;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS sent_at TIMESTAMPTZ;
 
 -- Alter table to support country and currency selection
 ALTER TABLE owner_settings ADD COLUMN IF NOT EXISTS country_code TEXT DEFAULT 'US';

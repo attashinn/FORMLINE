@@ -247,7 +247,11 @@ function Intake() {
       await queryClient.invalidateQueries({ queryKey: ["clients"] });
       localStorage.removeItem(DRAFT_KEY);
       localStorage.removeItem("cph.intake.draft.v1");
-      toast.success(`${record.company} added to your workspace`);
+      if (record.isNew) {
+        toast.success(`${record.company} added to your workspace`);
+      } else {
+        toast.success(`Linked to existing client ${record.company} (same email on form submission)`);
+      }
       navigate({ to: "/clients/$id", params: { id: record.id } });
     } catch (err) {
       console.error(err);

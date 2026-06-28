@@ -114,7 +114,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
     <div className="flex flex-col h-full bg-surface-muted/30">
       <GlobalSearch />
       {/* Navigation Links */}
-      <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
+      <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto" data-lenis-prevent>
         {sections.map((section) => (
           <div key={section.title} className="space-y-1.5">
             <div className="px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">
